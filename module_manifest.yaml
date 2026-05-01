@@ -1,0 +1,26 @@
+module_id: industry_analysis
+module_name: 行业分析模块
+module_version: 1.0.0
+schema_version: module_output_v1
+entrypoint: SKILL.md
+
+owner: 行业分析负责人
+description: 分析目标股票所在行业的走势、龙头表现、行业景气度,给出行业层面对该股的影响判断
+
+inputs:
+  required: [request_id, schema_version, ticker, analysis_date]
+  optional: [stock_name, market, forecast_horizon, current_price]
+
+outputs:
+  schema: module_output_v1
+
+dependencies:
+  data_sources: [tushare, eastmoney]
+  python_packages: [tushare, akshare, pandas, pyyaml, jsonschema]
+
+invocation_hints:
+  - 当 forecast_horizon >= 20d 时强烈建议调用
+  - 当用户问"这只股票所在行业..."时必调
+  - 数据需要 analysis_date 当天有效
+
+tags: [industry, sector, leaders, fundamentals, capital_flow]
