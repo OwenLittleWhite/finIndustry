@@ -1,0 +1,28 @@
+# 申万二级行业代码 → ETF 列表
+# v1 MVP 只覆盖 5 个高频行业,Plan 2 补全到 30+
+
+"801080":  # 半导体
+  - ticker: "159995"
+    name: "半导体ETF"
+  - ticker: "512760"
+    name: "芯片ETF"
+
+"801120":  # 食品饮料
+  - ticker: "512690"
+    name: "酒ETF"
+  - ticker: "159928"
+    name: "消费ETF"
+
+"801780":  # 银行
+  - ticker: "512800"
+    name: "银行ETF"
+
+"801950":  # 煤炭
+  - ticker: "515220"
+    name: "煤炭ETF"
+
+"801730":  # 电气设备
+  - ticker: "159875"
+    name: "新能源车ETF"
+  - ticker: "515030"
+    name: "新能源车ETF(广发)"
