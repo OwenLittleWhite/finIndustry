@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -25,11 +26,20 @@ class TushareClient:
 
     @staticmethod
     def _init_pro() -> Any:
+        # Lazy import to avoid hard dep at test time (tests inject mock pro).
+        from dotenv import load_dotenv
         import tushare as ts
+
+        # Load .env from project root if present (project root = parent of scripts/).
+        project_root = Path(__file__).resolve().parents[2]
+        load_dotenv(project_root / ".env")
 
         token = os.environ.get("TUSHARE_TOKEN")
         if not token:
-            raise RuntimeError("TUSHARE_TOKEN env var not set")
+            raise RuntimeError(
+                "TUSHARE_TOKEN env var not set. "
+                "Set it in .env (project root) or export it in your shell."
+            )
         ts.set_token(token)
         return ts.pro_api()
 
