@@ -26,7 +26,7 @@ def test_returns_l2_classification(mock_tushare):
     result = fetch_industry_classification(mock_tushare, ticker="600519")
     assert result["primary_industry"]["system"] == "申万二级"
     assert result["primary_industry"]["code"] == "801125.SI"
-    assert result["primary_industry"]["name"] == "白酒"
+    assert result["primary_industry"]["name"] == "白酒Ⅱ"
 
 
 def test_includes_l1_for_context(mock_tushare):

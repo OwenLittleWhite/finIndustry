@@ -1,4 +1,4 @@
-"""股票 → 关联热门概念(取近 30 天热度 top 3)。"""
+"""股票 → 关联概念(Tushare concept_detail 反查)。"""
 import json
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -16,20 +16,15 @@ def fixture_data():
 
 
 @pytest.fixture
-def mock_akshare(fixture_data):
-    """模拟两次 akshare 调用:概念列表(含热度) + 概念成分。"""
+def mock_tushare(fixture_data):
+    """模拟 Tushare concept_detail 反查 600519。"""
     client = MagicMock()
 
-    def call_side_effect(function_name, **params):
-        if function_name == "stock_board_concept_name_em":
-            return pd.DataFrame(fixture_data["akshare_concept_heat"])
-        if function_name == "stock_board_concept_cons_em":
-            symbol = params.get("symbol", "")
-            for concept in fixture_data["akshare_concept_em"]:
-                if concept["概念名称"] == symbol:
-                    return pd.DataFrame([
-                        {"代码": code} for code in concept["成分股"].split(",")
-                    ])
+    def call_side_effect(api_name, **params):
+        if api_name == "concept_detail":
+            ts_code = params.get("ts_code", "")
+            if ts_code == "600519.SH":
+                return pd.DataFrame(fixture_data["tushare_concept_detail_600519"])
             return pd.DataFrame()
         return pd.DataFrame()
 
@@ -37,20 +32,22 @@ def mock_akshare(fixture_data):
     return client
 
 
-def test_returns_top_3_hot_concepts(mock_akshare):
-    result = fetch_concept_mapping(mock_akshare, ticker="600519", top_n=3)
-    assert len(result) <= 3
-    # 茅指数热度 rank 3 → 第一
-    assert result[0]["name"] == "茅指数"
-    assert result[0]["heat_rank"] == 3
+def test_returns_top_3_concepts_in_order(mock_tushare):
+    """按 Tushare 返回顺序取前 N 个,heat_rank 是 1-based index。"""
+    result = fetch_concept_mapping(mock_tushare, ticker="600519", top_n=3)
+    assert len(result) == 3
+    assert result[0]["name"] == "白酒概念"
+    assert result[0]["code"] == "TS267"
+    assert result[0]["heat_rank"] == 1
+    assert result[1]["name"] == "沪股通"
+    assert result[1]["heat_rank"] == 2
+    assert result[2]["heat_rank"] == 3
 
 
-def test_filters_only_concepts_containing_ticker(mock_akshare):
-    """概念里必须包含 600519,否则不算。"""
-    result = fetch_concept_mapping(mock_akshare, ticker="600519")
-    names = [c["name"] for c in result]
-    for n in names:
-        assert n in {"高端消费", "ROE大白马", "茅指数"}
+def test_top_n_caps_result(mock_tushare):
+    """top_n=2 限制返回 2 个。"""
+    result = fetch_concept_mapping(mock_tushare, ticker="600519", top_n=2)
+    assert len(result) == 2
 
 
 def test_no_concept_returns_empty():
@@ -58,3 +55,13 @@ def test_no_concept_returns_empty():
     client.call.return_value = pd.DataFrame()
     result = fetch_concept_mapping(client, ticker="999999")
     assert result == []
+
+
+def test_includes_required_fields(mock_tushare):
+    """每条记录都有 name / code / heat_rank / heat_score。"""
+    result = fetch_concept_mapping(mock_tushare, ticker="600519", top_n=1)
+    assert "name" in result[0]
+    assert "code" in result[0]
+    assert "heat_rank" in result[0]
+    assert "heat_score" in result[0]
+    assert result[0]["heat_score"] == 0.0  # Tushare 不提供热度

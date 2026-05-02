@@ -1,9 +1,19 @@
-"""股票 → 关联热门概念(akshare 东方财富数据)。
+"""股票 → 关联概念(Tushare `concept_detail` 反查)。
 
-策略:
-1. 取所有概念列表(含热度排名),按 rank 升序(rank 越小越热)
-2. 对前 N 个概念,逐个看成分股是否含 ticker
-3. 返回前 top_n 个含 ticker 的概念
+数据源:Tushare `concept_detail(ts_code=...)`,返回该股所属的全部 Tushare 概念。
+
+输出格式:
+  [
+    {"name": "白酒概念", "code": "TS267", "heat_rank": 1, "heat_score": 0.0},
+    {"name": "沪股通",   "code": "TS392", "heat_rank": 2, "heat_score": 0.0},
+    ...
+  ]
+
+说明:
+- `heat_rank`:用 Tushare 返回的列表顺序模拟"热度",1 = 最相关。
+- `heat_score`:Tushare 不提供热度数据,统一为 0.0。
+- 该字段为占位,保持与 v0 输出 schema 兼容,LLM 可忽略 heat 字段。
+- 实际"行业相关概念"由 LLM 在分析时基于概念名称语义挑选(见 SKILL.md)。
 """
 from __future__ import annotations
 
@@ -14,44 +24,45 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.common.akshare_client import AkshareClient  # noqa: E402
-from scripts.common.cache import Cache
+from scripts.common.cache import Cache  # noqa: E402
+from scripts.common.tushare_client import TushareClient  # noqa: E402
+
+
+def _normalize_ts_code(ticker: str) -> str:
+    """6 位数字 → Tushare 格式(如 600519 → 600519.SH)。复用 fetch_industry_classification 同样逻辑。"""
+    ticker = str(ticker).strip()
+    if "." in ticker:
+        return ticker
+    if ticker.startswith(("60", "68", "5")):
+        return f"{ticker}.SH"
+    if ticker.startswith(("00", "30", "15", "16", "1")):
+        return f"{ticker}.SZ"
+    if ticker.startswith(("4", "8", "9")):
+        return f"{ticker}.BJ"
+    return ticker
 
 
 def fetch_concept_mapping(client, ticker: str, top_n: int = 3) -> list[dict]:
     """
-    返回最多 top_n 个热度最高、且包含目标 ticker 的概念板块。
+    返回该股票所属的 Tushare 概念,最多 top_n 个,按 Tushare 返回顺序。
 
-    格式:
-      [
-        {"name": "茅指数", "heat_rank": 3, "heat_score": 0.10},
-        ...
-      ]
+    无概念 / 数据源不可用时返回空列表。
     """
-    concepts_df = client.call("stock_board_concept_name_em")
-    if concepts_df.empty:
+    ts_code = _normalize_ts_code(ticker)
+    df = client.call("concept_detail", ts_code=ts_code)
+    if df.empty or "concept_name" not in df.columns:
         return []
 
-    # 按热度排名升序(假设字段名"热度排名")
-    if "热度排名" in concepts_df.columns:
-        concepts_df = concepts_df.sort_values("热度排名")
-
     result = []
-    ticker_str = str(ticker).strip()
-    for _, row in concepts_df.iterrows():
+    for idx, row in df.iterrows():
         if len(result) >= top_n:
             break
-        concept_name = row["概念名称"]
-        cons_df = client.call("stock_board_concept_cons_em", symbol=concept_name)
-        if cons_df.empty or "代码" not in cons_df.columns:
-            continue
-        codes = {str(c).strip() for c in cons_df["代码"].tolist()}
-        if ticker_str in codes:
-            result.append({
-                "name": concept_name,
-                "heat_rank": int(row.get("热度排名", 0)),
-                "heat_score": float(row.get("近5日涨幅", 0.0)),
-            })
+        result.append({
+            "name": str(row.get("concept_name", "")),
+            "code": str(row.get("id", "")),
+            "heat_rank": len(result) + 1,
+            "heat_score": 0.0,
+        })
     return result
 
 
@@ -65,7 +76,7 @@ def main() -> int:
     args = parser.parse_args()
 
     cache = Cache(args.cache_dir)
-    client = AkshareClient(cache=cache, analysis_date=args.analysis_date)
+    client = TushareClient(cache=cache, analysis_date=args.analysis_date)
     result = fetch_concept_mapping(client, args.ticker, top_n=args.top_n)
     payload = json.dumps(result, ensure_ascii=False, indent=2)
     if args.output == "-":

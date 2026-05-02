@@ -12,17 +12,18 @@ from scripts.trend.fetch_industry_index import compute_window_returns, fetch_ind
 from scripts.trend.fetch_market_index import compute_relative_strength, fetch_market_index
 
 
-def test_data_pipeline_600519(mock_tushare_for_600519, mock_akshare_for_600519):
+def test_data_pipeline_600519(mock_tushare_for_600519):
     """完整数据脚本链路 + 模拟 LLM 输出 + JSON 校验。"""
     analysis_date = "2026-05-01"
 
-    # Step 1: classification
+    # Step 1: classification (Tushare for both industry and concepts)
     cls = fetch_industry_classification(mock_tushare_for_600519, ticker="600519")
     assert cls is not None
     assert cls["primary_industry"]["code"] == "801125.SI"
 
-    concepts = fetch_concept_mapping(mock_akshare_for_600519, ticker="600519", top_n=3)
-    assert len(concepts) <= 3
+    concepts = fetch_concept_mapping(mock_tushare_for_600519, ticker="600519", top_n=3)
+    assert len(concepts) == 3
+    assert concepts[0]["name"] == "白酒概念"
 
     # Step 2: trend data
     industry_df = fetch_industry_index(
@@ -68,7 +69,7 @@ def test_data_pipeline_600519(mock_tushare_for_600519, mock_akshare_for_600519):
         ],
         "risks": ["MVP 仅看走势,缺其他维度信号"],
         "summary": "走势偏多,茅台短期受益。",
-        "metrics": {"latency_ms": 8000, "data_sources_used": ["tushare", "akshare"]},
+        "metrics": {"latency_ms": 8000, "data_sources_used": ["tushare"]},
         "module_specific": {
             "classification": {
                 "primary_industry": cls["primary_industry"],
