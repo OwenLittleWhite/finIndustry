@@ -1,0 +1,181 @@
+{
+  "module_id": "industry_analysis",
+  "module_name": "行业分析模块",
+  "module_version": "1.0.0",
+  "schema_version": "module_output_v1",
+  "request_id": "req_20260430_smoke_v4",
+  "analysis_date": "2026-04-30",
+  "status": "success",
+  "signal": "中性",
+  "score": -10,
+  "confidence": 0.50,
+  "reasons": [
+    "白酒Ⅱ 12M 累跌 -19.1%，显著跑输沪深300 +25.5%，行业长期下行趋势延续",
+    "2026Q1 行业营收 YoY -14.2%、利润 YoY -19.0%，景气持续恶化但跌幅较 2025Q4 有所收窄",
+    "融资余额 5d -31% 极度流出，白酒板块融资客大规模撤退，资金面偏空",
+    "茅台是绝对龙头（市值 1.73 万亿），3M 跑赢行业约 10pp，龙头地位部分对冲行业弱势",
+    "PMI 制造业 50.4 刚进扩张区 + PPI 转正 + M2 8.5%，宏观改善信号利好消费品长期传导"
+  ],
+  "risks": [
+    "行业景气连续 6 季恶化，企业 ROE 中位数从 15.9 降至 3.3，盈利底部尚未确认",
+    "融资资金持续大额流出（20d -30%），机构去杠杆压力未消",
+    "消费复苏力度受限，非制造业 PMI 仅 50.1，白酒可选消费需求改善空间存疑",
+    "主力资金数据缺失（代理限制），资金面全貌存在信息盲区"
+  ],
+  "summary": "白酒行业下行趋势延续但底部摸索，PB 历史极低 + 宏观改善对冲，茅台龙头独强，综合中性偏弱。",
+  "metrics": {
+    "latency_ms": 45000,
+    "data_sources_used": ["tushare"]
+  },
+  "module_specific": {
+    "classification": {
+      "primary_industry": {
+        "system": "申万二级",
+        "code": "801125.SI",
+        "name": "白酒Ⅱ"
+      },
+      "l1_industry": {
+        "code": "801120.SI",
+        "name": "食品饮料"
+      },
+      "related_concepts": [
+        {"name": "转融券标的", "code": "TS108", "heat_rank": 1},
+        {"name": "超级品牌", "code": "TS118", "heat_rank": 2},
+        {"name": "贵州国资改革", "code": "TS125", "heat_rank": 3}
+      ]
+    },
+    "agent_breakdown": {
+      "trend": {
+        "score": -50,
+        "confidence": 0.75,
+        "stage": "下行",
+        "key_signals": [
+          {"name": "return_1m", "value": -0.0479, "interpretation": "1M -4.8%，跑输沪深300约11pp"},
+          {"name": "return_3m", "value": -0.0185, "interpretation": "3M -1.9%，跌速较12M有所放缓"},
+          {"name": "return_12m", "value": -0.1907, "interpretation": "12M -19.1%，长期系统性下行"},
+          {"name": "advance_decline_ratio", "value": 0.1875, "interpretation": "3涨16跌，行业内几乎全线弱势"},
+          {"name": "rs_vs_csi300_1m", "value": -0.1100, "interpretation": "1M 相对强度 -11pp，显著跑输大盘"}
+        ]
+      },
+      "fundamentals": {
+        "score": -10,
+        "confidence": 0.75,
+        "stage": "底部",
+        "valuation_percentile": {
+          "pe": 0.43,
+          "pb": 0.023
+        },
+        "key_signals": [
+          {"name": "agg_revenue_yoy_2026q1", "value": -0.1419, "interpretation": "2026Q1 行业营收 YoY -14.2%，景气持续恶化"},
+          {"name": "agg_profit_yoy_2026q1", "value": -0.1903, "interpretation": "2026Q1 利润 YoY -19.0%，较Q4 -35.7% 有收窄"},
+          {"name": "median_roe_2026q1", "value": 3.30, "interpretation": "ROE 中位数降至 3.3%，远低于历史均值"},
+          {"name": "pe_percentile_5y", "value": 0.43, "interpretation": "PE 历史分位 43%，估值合理偏低"},
+          {"name": "pb_percentile_5y", "value": 0.023, "interpretation": "PB 历史分位 2.3%，历史极低！隐含大量悲观预期"},
+          {"name": "median_gross_margin", "value": 67.6, "interpretation": "毛利率 67.6%，较峰值 74.3% 下降约 6.7pp"}
+        ]
+      },
+      "capital_flow": {
+        "score": -25,
+        "confidence": 0.45,
+        "main_inflow_5d_yi": null,
+        "northbound_change_5d_pct": null,
+        "margin_change_5d_pct": -0.3097,
+        "consensus": "mixed",
+        "key_signals": [
+          {"name": "main_flow", "value": null, "interpretation": "akshare 代理受限，主力数据缺失（已知问题）"},
+          {"name": "north_money_today_yi", "value": 35.07, "interpretation": "市场级北向今日净买入 35.1 亿（大盘情绪积极，非行业专项）"},
+          {"name": "north_money_5d_yi", "value": 169.06, "interpretation": "市场级北向 5d 净买入 169 亿，大盘资金偏多"},
+          {"name": "margin_change_5d_pct", "value": -0.3097, "interpretation": "白酒融资余额 5d 下降 31%，融资客大规模撤退，行业层面利空"},
+          {"name": "margin_change_20d_pct", "value": -0.2997, "interpretation": "融资余额 20d 同样下降 30%，流出趋势持续"}
+        ]
+      },
+      "leaders": {
+        "score": 15,
+        "confidence": 0.70,
+        "target_position": "绝对龙头",
+        "rank_in_industry": 1,
+        "rs_vs_leaders_avg_1m": 0.994,
+        "rs_vs_leaders_avg_3m": 1.102,
+        "key_signals": [
+          {"name": "rank_in_industry", "value": 1, "interpretation": "茅台行业市值第一，领先第二名（五粮液）4.6 倍"},
+          {"name": "target_return_3m", "value": 0.0311, "interpretation": "茅台 3M +3.1%，逆势正收益"},
+          {"name": "leaders_avg_3m", "value": -0.0645, "interpretation": "其他龙头 3M 平均 -6.5%，茅台大幅跑赢"},
+          {"name": "rs_vs_leaders_3m", "value": 1.102, "interpretation": "3M RS = 1.10，超越行业龙头均值约 10pp"},
+          {"name": "leaders_avg_1m", "value": -0.0455, "interpretation": "龙头 1M 集体下跌，行业短期弱势"}
+        ]
+      },
+      "macro_policy": {
+        "score": 20,
+        "confidence": 0.65,
+        "macro_alignment": "中性偏顺风",
+        "key_signals": [
+          {"name": "manufacturing_pmi_2026_03", "value": 50.4, "interpretation": "制造业PMI 50.4，刚进扩张区，经济底部改善信号"},
+          {"name": "non_manufacturing_pmi_2026_03", "value": 50.1, "interpretation": "非制造业PMI 50.1，消费活动刚好扩张，力度有限"},
+          {"name": "cpi_yoy_2026_03", "value": 1.0, "interpretation": "CPI +1%，消费品价格温和上行，白酒定价环境尚可"},
+          {"name": "ppi_yoy_2026_03", "value": 0.5, "interpretation": "PPI 转正（结束 25 个月通缩），成本端压力减轻"},
+          {"name": "m2_yoy_2026_03", "value": 8.5, "interpretation": "M2 增速 8.5%，流动性充裕，有利风险资产和消费复苏"},
+          {"name": "shibor_1y", "value": 1.472, "interpretation": "SHIBOR 1Y 1.47%，极低利率，融资成本低，对消费品间接正面"}
+        ]
+      }
+    },
+    "industry_outlook": {
+      "verdict": "中性偏弱",
+      "stage": "下行底部摸索",
+      "horizon": "60d",
+      "rationale": "行业走势长期偏弱、融资大额流出、景气仍在下行，但 PB 历史极低 + 宏观改善 + 茅台龙头独强，60d 内行业可能维持底部震荡，反转需业绩改善确认"
+    },
+    "stock_in_industry": {
+      "relative_position": "绝对龙头",
+      "industry_boost": 0,
+      "rationale": "行业综合得分 -10（中性），industry_boost = round(-10/50) = 0；茅台是绝对龙头但无法对抗行业级别信号"
+    },
+    "weights_used": {
+      "trend": 0.20,
+      "fundamentals": 0.20,
+      "capital_flow": 0.20,
+      "leaders": 0.20,
+      "macro_policy": 0.20,
+      "_note": "horizon=60d 按 5 维度等权"
+    },
+    "raw_data_snapshot": {
+      "industry_returns": {
+        "1m": -0.0479,
+        "3m": -0.0185,
+        "6m": -0.1209,
+        "12m": -0.1907
+      },
+      "breadth": {
+        "advance": 3,
+        "decline": 16,
+        "flat": 1,
+        "advance_decline_ratio": 0.1875
+      },
+      "fundamentals_yoy": {
+        "2026q1_revenue_yoy": -0.1419,
+        "2026q1_profit_yoy": -0.1903
+      },
+      "valuation": {
+        "pe_median": 27.71,
+        "pb_median": 2.55,
+        "pe_percentile_5y": 0.43,
+        "pb_percentile_5y": 0.023
+      },
+      "capital": {
+        "main_flow_5d_yi": null,
+        "north_money_today_yi": 35.07,
+        "north_money_5d_yi": 169.06,
+        "north_money_scope": "market_level",
+        "margin_balance_yi": 225.22,
+        "margin_change_5d_pct": -0.3097
+      },
+      "macro": {
+        "manufacturing_pmi": 50.4,
+        "non_manufacturing_pmi": 50.1,
+        "cpi_yoy": 1.0,
+        "ppi_yoy": 0.5,
+        "m2_yoy": 8.5,
+        "shibor_1y": 1.472
+      }
+    }
+  }
+}
