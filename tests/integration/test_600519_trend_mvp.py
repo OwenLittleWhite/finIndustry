@@ -6,6 +6,8 @@ LLM 推理部分由 SKILL.md 的开发者手动跑通(用 claude code "/industry
 from scripts.classification.fetch_concept_mapping import fetch_concept_mapping
 from scripts.classification.fetch_industry_classification import fetch_industry_classification
 from scripts.common.derive_signal import derive_signal
+from scripts.leaders.compute_target_position import compute_target_position
+from scripts.leaders.fetch_industry_leaders import fetch_industry_leaders
 from scripts.output_validator import validate_output
 from scripts.trend.compute_breadth import compute_breadth_for_industry
 from scripts.trend.fetch_industry_index import compute_window_returns, fetch_industry_index
@@ -48,7 +50,26 @@ def test_data_pipeline_600519(mock_tushare_for_600519):
         analysis_date=analysis_date,
     )
 
-    # Step 3-5: 模拟 LLM 输出(MVP 走势 only)
+    # Step 2.5: leaders
+    leaders = fetch_industry_leaders(
+        mock_tushare_for_600519,
+        industry_l2_code=cls["primary_industry"]["code"],
+        analysis_date=analysis_date,
+    )
+    assert len(leaders) == 5
+    assert leaders[0]["ticker"] == "600519.SH"  # 茅台市值最大,排第 1
+    assert leaders[0]["name"] == "贵州茅台"
+
+    target_position = compute_target_position(
+        target_ticker="600519.SH",
+        target_return_1m=leaders[0]["return_1m"],
+        target_return_3m=leaders[0]["return_3m"],
+        leaders=leaders,
+    )
+    assert target_position["rank_in_industry"] == 1
+    assert target_position["target_position"] == "绝对龙头"
+
+    # Step 3-5: 模拟 LLM 输出(trend + leaders 双激活)
     final_score = 35
     final_confidence = 0.4
     output = {
@@ -85,12 +106,24 @@ def test_data_pipeline_600519(mock_tushare_for_600519):
                         {"name": "breadth_ratio", "value": breadth["advance_decline_ratio"]},
                     ],
                 },
+                "leaders": {
+                    "score": 25,
+                    "confidence": 0.7,
+                    "target_position": target_position["target_position"],
+                    "rank_in_industry": target_position["rank_in_industry"],
+                    "rs_vs_leaders_avg_1m": target_position["rs_vs_leaders_avg_1m"],
+                    "key_signals": [],
+                },
                 "fundamentals": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
                 "capital_flow": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
-                "leaders": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
                 "macro_policy": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
             },
-            "weights_used": {"trend": 1.0, "_note": "MVP 阶段只走 trend"},
+            "stock_in_industry": {
+                "relative_position": target_position["target_position"],
+                "industry_boost": 0,
+                "rationale": target_position["rationale"],
+            },
+            "weights_used": {"trend": 0.5, "leaders": 0.5, "_note": "trend + leaders 双维度"},
         },
     }
 
