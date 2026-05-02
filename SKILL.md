@@ -1,6 +1,6 @@
 ---
 name: industry-analysis
-description: 当总控需要分析 A 股股票所在行业的走势、基本面、资金流、龙头表现、宏观传导时调用。输入股票代码 + 上下文,输出符合 module_output_v1 的行业分析 JSON,包含 -100~100 的行业评分、对该股的行业层面影响判断(含目标股 vs 行业龙头的相对位置)、5 维度 agent 拆解、关键催化与风险。仅适用 A 股。所有 5 个分析 agent(走势/基本面/资金/龙头/宏观政策)全部激活。
+description: 当总控需要分析 A 股股票所在行业的走势、基本面、资金流、龙头表现、宏观传导时调用。输入股票代码 + 上下文,输出 (1) 符合 module_output_v1 的行业分析 JSON 给上游消费,(2) 同名 PDF 研报给人看。包含 -100~100 的行业评分、对该股的行业层面影响判断(含目标股 vs 行业龙头的相对位置)、5 维度 agent 拆解、关键催化与风险。仅适用 A 股。所有 5 个分析 agent(走势/基本面/资金/龙头/宏观政策)全部激活。
 version: 1.0.0
 schema_version: module_output_v1
 inputs:
@@ -324,11 +324,31 @@ python scripts/macro_policy/fetch_macro_indicators.py \
 ### Step 7: 校验输出
 
 ```bash
-echo '{...完整 JSON...}' > /tmp/output.json
-python scripts/output_validator.py --input /tmp/output.json
+echo '{...完整 JSON...}' > outputs/{ticker}_{analysis_date}.json
+python scripts/output_validator.py --input outputs/{ticker}_{analysis_date}.json
 ```
 
 如果失败:**修正 JSON 后重试 1 次**;仍失败设 `status=failed`、`code=REASONING_FAILED`。
+
+### Step 8: 生成 PDF 研报(可选,但推荐)
+
+JSON 是给上游(总控)的契约,PDF 是给人看的研报。两者并行交付。
+
+```bash
+python scripts/report/build_pdf_report.py \
+  --input outputs/{ticker}_{analysis_date}.json \
+  --output outputs/{ticker}_{analysis_date}.pdf \
+  --ticker {ticker} \
+  --stock-name {stock_name}
+```
+
+PDF 默认 4 页,内容:
+- 第 1 页:封面 + 总分 + summary + reasons + risks + 5 维度评分总览表
+- 第 2 页:行业定位 + 行业景气度判断 + 目标股位置
+- 第 3 页:5 个 agent 详细 key_signals 表
+- 第 4 页:元数据 + 免责声明
+
+PDF 失败不阻塞 JSON 输出 — JSON 已经写到 outputs/ 给上游消费,PDF 只是附加交付物。
 
 ## 4. Output JSON Schema
 

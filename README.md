@@ -2,7 +2,7 @@
 
 > stock-forecast-system 的**行业分析子 skill**。输入 A 股股票代码 → 输出该股**所属行业层面**的走势、龙头、景气度分析,作为总控合成最终预测的"行业维度"输入。
 
-**状态**:🟢 v1.1 / Plan 2b 已交付 / **91 测试全过** / **5 个 analyst agent 全激活** / 真实 Tushare 数据已跑通
+**状态**:🟢 v1.1.0 / **5 个 analyst agent 全激活** + **PDF 研报输出** / 99 测试全过 / 真实 Tushare 数据已跑通
 
 ---
 
@@ -16,6 +16,14 @@
 | 🧐 **总控负责人,看子 skill 全景规范** | [docs/sub-skill-spec-v1.md](docs/sub-skill-spec-v1.md)(v1.1) |
 
 ---
+
+## 双重交付 — JSON(给上游)+ PDF(给人看)
+
+每次分析同时产出两份:
+- 📄 **`outputs/{ticker}_{date}.json`** — 符合 `module_output_v1` schema,总控直接消费
+- 📑 **`outputs/{ticker}_{date}.pdf`** — 4 页结构化研报,封面 + 行业概览 + 5 agent 详情 + 元数据
+
+> 已实测样本:[outputs/600089_2026-04-30.pdf](outputs/600089_2026-04-30.pdf) — 特变电工 / 电网设备
 
 ## 真实输出示范(2026-04-30 跑 600519 贵州茅台)
 
@@ -121,6 +129,7 @@ finIndustry/
 │   ├── fundamentals/   (行业聚合财务 + PE/PB 历史分位) — Plan 2b
 │   ├── capital/        (行业主力 / 北向 / 融资融券) — Plan 2b
 │   ├── macro_policy/   (CPI/PPI/PMI/M2/SHIBOR) — Plan 2b
+│   ├── report/         (PDF 研报生成) — v1.1
 │   └── output_validator.py
 ├── shared_schemas/                       # JSON Schema
 ├── tests/                                # 91 测试

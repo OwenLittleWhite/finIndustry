@@ -1,0 +1,144 @@
+{
+  "module_id": "industry_analysis",
+  "module_name": "行业分析模块",
+  "module_version": "1.0.0",
+  "schema_version": "module_output_v1",
+  "request_id": "req_20260430_600089",
+  "analysis_date": "2026-04-30",
+  "status": "partial",
+  "signal": "中性",
+  "score": -10,
+  "confidence": 0.62,
+  "reasons": [
+    "电网设备 12M +71%、6M +27%大牛行情已运行超 1 年",
+    "估值已极贵:行业 PE 历史 5 年分位 99.6%,PB 97.5%",
+    "2026Q1 净利 YoY 由 +9% 急转 -3.65%,毛利率从 22.5% 降至 19.9%,盈利拐点信号",
+    "融资余额 5d -38%,20d -35%,资金大幅去杠杆撤离",
+    "宏观顺风(PPI 转正 / PMI 扩张 / M2+8.5% / 低利率)对设备制造业有支撑"
+  ],
+  "risks": [
+    "行业估值见顶风险高,1M/3M 已横盘可能孕育大幅回调",
+    "成本压力(毛利率收缩)可能持续吞噬利润",
+    "融资资金加速撤离,机构出货迹象明显",
+    "akshare 主力资金接口受代理限制不可用,资金面信号缺一维度"
+  ],
+  "summary": "电网设备见顶风险高,特变电工二线龙头估值偏低对冲部分风险。",
+  "metrics": {
+    "latency_ms": 35000,
+    "data_sources_used": ["tushare", "akshare"]
+  },
+  "module_specific": {
+    "classification": {
+      "primary_industry": {
+        "system": "申万二级",
+        "code": "801738.SI",
+        "name": "电网设备"
+      },
+      "l1_industry": {
+        "code": "801730.SI",
+        "name": "电力设备"
+      },
+      "related_concepts": [
+        {"name": "黄金概念", "code": "TS4", "heat_rank": 1},
+        {"name": "风电", "code": "TS25", "heat_rank": 2},
+        {"name": "转融券标的", "code": "TS108", "heat_rank": 3},
+        {"name": "超导", "code": "TS122", "heat_rank": 4},
+        {"name": "证金持股", "code": "TS133", "heat_rank": 5}
+      ]
+    },
+    "agent_breakdown": {
+      "trend": {
+        "score": 25,
+        "confidence": 0.7,
+        "stage": "见顶震荡",
+        "key_signals": [
+          {"name": "industry_return_12m", "value": 0.7125, "interpretation": "12M+71% 大牛, +3"},
+          {"name": "industry_return_6m", "value": 0.2666, "interpretation": "6M+27%, +2"},
+          {"name": "industry_return_3m", "value": 0.0269, "interpretation": "3M 仅+2.7% 已横盘, 0"},
+          {"name": "industry_return_1m", "value": 0.0126, "interpretation": "1M+1.3% 涨势停滞, 0"},
+          {"name": "rs_vs_csi300_12m", "value": 1.346, "interpretation": "12M 跑赢沪深300 35pp, +3"},
+          {"name": "advance_decline_ratio", "value": 0.5843, "interpretation": "52涨89跌,中性偏弱, -1"},
+          {"name": "limit_up_count", "value": 3, "interpretation": "当日3只涨停,板块仍活跃, +1"}
+        ]
+      },
+      "fundamentals": {
+        "score": -55,
+        "confidence": 0.8,
+        "stage": "见顶",
+        "valuation_percentile": {"pe": 0.996, "pb": 0.975},
+        "key_signals": [
+          {"name": "pe_percentile_5y", "value": 0.996, "interpretation": "PE 历史 99.6% 分位,几乎最贵, -3"},
+          {"name": "pb_percentile_5y", "value": 0.975, "interpretation": "PB 历史 97.5% 分位, -3"},
+          {"name": "agg_revenue_yoy_2026q1", "value": 0.1056, "interpretation": "营收+10.56% 仍增长, +1"},
+          {"name": "agg_profit_yoy_2026q1", "value": -0.0365, "interpretation": "净利转负 -3.65%(从 Q4 +1.77% 急转), -2"},
+          {"name": "median_roe_trend", "value": "1.1 vs Q4 6.4", "interpretation": "ROE 中位数从 6.4 暴跌至 1.1, -2"},
+          {"name": "gross_margin_compression", "value": "19.9 vs Q4 22.5", "interpretation": "毛利率从 22.5% 降到 19.9% 价格压力, -2"}
+        ]
+      },
+      "capital_flow": {
+        "score": -35,
+        "confidence": 0.55,
+        "main_inflow_5d_yi": null,
+        "north_money_today_yi": 35.07,
+        "margin_balance_yi": 284,
+        "margin_change_5d": -0.382,
+        "margin_change_20d": -0.3516,
+        "consensus": "outflow",
+        "key_signals": [
+          {"name": "margin_change_5d", "value": -0.382, "interpretation": "融资 5d -38%,大幅去杠杆, -3"},
+          {"name": "margin_change_20d", "value": -0.3516, "interpretation": "融资 20d -35%,趋势性撤离, -3"},
+          {"name": "north_money_today_yi", "value": 35.07, "interpretation": "市场级别北向 +35 亿(非行业专项), +1"},
+          {"name": "main_inflow", "value": null, "interpretation": "akshare 受代理限制,数据缺失"}
+        ]
+      },
+      "leaders": {
+        "score": 0,
+        "confidence": 0.7,
+        "target_position": "二线龙头",
+        "rank_in_industry": 3,
+        "rs_vs_leaders_avg_1m": 1.0025,
+        "rs_vs_leaders_avg_3m": 0.9191,
+        "leaders_avg_1m": -0.001,
+        "leaders_avg_3m": 0.0311,
+        "key_signals": [
+          {"name": "rank_in_industry", "value": 3, "interpretation": "二线龙头(rank 3 of 5),+1"},
+          {"name": "mv_ratio_to_leader", "value": 0.65, "interpretation": "市值 1355 亿 vs 国电南瑞 2086 亿,中等差距, 0"},
+          {"name": "rs_vs_leaders_3m", "value": 0.92, "interpretation": "3M 略弱于龙头均值, -1"},
+          {"name": "target_pe_vs_industry", "value": "21.97 vs 57.4", "interpretation": "特变电工 PE 21.97 < 行业中位数 57.4,相对低估, +2"},
+          {"name": "leader_604_strength", "value": "中国西电 1M+8.18%", "interpretation": "其他龙头有结构性强势, -1(对 600089 不利)"}
+        ]
+      },
+      "macro_policy": {
+        "score": 35,
+        "confidence": 0.65,
+        "macro_alignment": "顺风",
+        "key_signals": [
+          {"name": "ppi_2026_03", "value": 0.005, "interpretation": "PPI YoY +0.5% 转正,工业品价格回升, +2"},
+          {"name": "manufacturing_pmi", "value": 50.4, "interpretation": "制造业 PMI 进扩张区, +2"},
+          {"name": "m2_yoy", "value": 0.085, "interpretation": "M2+8.5% 流动性温和宽松, +1"},
+          {"name": "shibor_1y", "value": 1.47, "interpretation": "SHIBOR 1Y 极低,设备资本投资成本低, +2"},
+          {"name": "cpi_yoy", "value": 0.01, "interpretation": "CPI+1.0% 温和通胀,对周期+1"}
+        ]
+      }
+    },
+    "industry_outlook": {
+      "verdict": "中性偏弱",
+      "stage": "见顶震荡",
+      "horizon": "60d",
+      "rationale": "电网设备 12M 涨 71% 大牛已被透支,估值历史最贵 99%+ 分位,2026Q1 净利转负为拐点信号,叠加融资去杠杆,见顶风险高;宏观顺风 + 行业基础形态仍在,不支持快速崩盘判断。"
+    },
+    "stock_in_industry": {
+      "relative_position": "二线龙头",
+      "industry_boost": -1,
+      "rationale": "行业层面对特变电工是负向(估值见顶风险 + 资金撤离),但其本身 PE 21.97 远低于行业中位数 57.4,提供一定估值缓冲;二线龙头位置(rank 3)在行业回调时下跌弹性可能小于头部高估值龙头。"
+    },
+    "weights_used": {
+      "trend": 0.20,
+      "fundamentals": 0.20,
+      "capital_flow": 0.20,
+      "leaders": 0.20,
+      "macro_policy": 0.20,
+      "_note": "horizon=60d 5 维度等权"
+    }
+  }
+}
