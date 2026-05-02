@@ -19,7 +19,7 @@ def test_data_pipeline_600519(mock_tushare_for_600519, mock_akshare_for_600519):
     # Step 1: classification
     cls = fetch_industry_classification(mock_tushare_for_600519, ticker="600519")
     assert cls is not None
-    assert cls["primary_industry"]["code"] == "801123.SI"
+    assert cls["primary_industry"]["code"] == "801125.SI"
 
     concepts = fetch_concept_mapping(mock_akshare_for_600519, ticker="600519", top_n=3)
     assert len(concepts) <= 3

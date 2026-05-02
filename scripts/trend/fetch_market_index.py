@@ -6,17 +6,22 @@ import json
 import sys
 from pathlib import Path
 
-import pandas as pd
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.common.cache import Cache
-from scripts.common.tushare_client import TushareClient
+import pandas as pd  # noqa: E402
+
+from scripts.common.cache import Cache  # noqa: E402
+from scripts.common.tushare_client import TushareClient  # noqa: E402
+
+
+DEFAULT_LOOKBACK = 260  # 与 fetch_industry_index 保持一致(支持 12m 窗口)
 
 
 def fetch_market_index(
     client,
     market_code: str,
     analysis_date: str,
-    lookback_days: int = 250,
+    lookback_days: int = DEFAULT_LOOKBACK,
 ) -> pd.DataFrame:
     end_date = analysis_date.replace("-", "")
     df = client.call("index_daily", ts_code=market_code, end_date=end_date)
@@ -52,7 +57,7 @@ def main() -> int:
     parser.add_argument("--analysis-date", required=True)
     parser.add_argument("--cache-dir", default="./data")
     parser.add_argument("--output", default="-")
-    parser.add_argument("--lookback-days", type=int, default=250)
+    parser.add_argument("--lookback-days", type=int, default=DEFAULT_LOOKBACK)
     args = parser.parse_args()
 
     cache = Cache(args.cache_dir)

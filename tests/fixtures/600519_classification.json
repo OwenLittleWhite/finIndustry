@@ -1,6 +1,6 @@
 {
   "tushare_index_member_all": [
-    {"l1_code": "801120.SI", "l1_name": "食品饮料", "l2_code": "801123.SI", "l2_name": "白酒", "ts_code": "600519.SH"}
+    {"l1_code": "801120.SI", "l1_name": "食品饮料", "l2_code": "801125.SI", "l2_name": "白酒", "ts_code": "600519.SH"}
   ],
   "akshare_concept_em": [
     {"概念名称": "高端消费", "成分股": "600519,000858"},

@@ -14,7 +14,7 @@ from scripts.trend.fetch_industry_index import (
 
 @pytest.fixture
 def index_data():
-    path = Path(__file__).parent.parent / "fixtures" / "801123_index.json"
+    path = Path(__file__).parent.parent / "fixtures" / "801125_index.json"
     return json.loads(path.read_text())["industry_index"]
 
 
@@ -28,7 +28,7 @@ def mock_client(index_data):
 def test_fetch_returns_dataframe(mock_client):
     df = fetch_industry_index(
         mock_client,
-        index_code="801123.SI",
+        index_code="801125.SI",
         analysis_date="2026-01-31",
         lookback_days=250,
     )
@@ -39,7 +39,7 @@ def test_fetch_returns_dataframe(mock_client):
 def test_compute_window_returns_includes_1m_3m_6m_12m(mock_client):
     df = fetch_industry_index(
         mock_client,
-        index_code="801123.SI",
+        index_code="801125.SI",
         analysis_date="2026-01-31",
         lookback_days=250,
     )

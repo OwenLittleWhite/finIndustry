@@ -6,8 +6,10 @@ import json
 import sys
 from pathlib import Path
 
-from scripts.common.cache import Cache
-from scripts.common.tushare_client import TushareClient
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.common.cache import Cache  # noqa: E402
+from scripts.common.tushare_client import TushareClient  # noqa: E402
 
 LIMIT_UP_THRESHOLD = 9.9  # A 股主板 10% 涨停,留 0.1% 余地
 
@@ -27,15 +29,16 @@ def compute_breadth_for_industry(
         "advance_decline_ratio": float | None,
       }
     """
-    # Tushare index_member_all: 用 l2_code 查申万二级行业的成分股
+    # Tushare index_member_all: 用 l2_code 查申万二级行业的成分股。
+    # 该接口返回 ts_code(成分股代码),不是 con_code。
     members = client.call("index_member_all", l2_code=industry_l2_code, is_new="Y")
-    if members.empty or "con_code" not in members.columns:
+    if members.empty or "ts_code" not in members.columns:
         return {"advance": 0, "decline": 0, "flat": 0, "limit_up": 0, "advance_decline_ratio": None}
 
     end_date = analysis_date.replace("-", "")
     advance = decline = flat = limit_up = 0
 
-    for code in members["con_code"].tolist():
+    for code in members["ts_code"].tolist():
         df = client.call("daily", ts_code=code, end_date=end_date)
         if df.empty or "pct_chg" not in df.columns:
             continue

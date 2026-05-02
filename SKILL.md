@@ -215,7 +215,7 @@ python scripts/output_validator.py --input /tmp/output.json
   },
   "module_specific": {
     "classification": {
-      "primary_industry": {"system": "申万二级", "code": "801123.SI", "name": "白酒"},
+      "primary_industry": {"system": "申万二级", "code": "801125.SI", "name": "白酒"},
       "related_concepts": []
     },
     "agent_breakdown": {

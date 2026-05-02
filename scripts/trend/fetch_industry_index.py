@@ -6,19 +6,23 @@ import json
 import sys
 from pathlib import Path
 
-import pandas as pd
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.common.cache import Cache
-from scripts.common.tushare_client import TushareClient
+import pandas as pd  # noqa: E402
+
+from scripts.common.cache import Cache  # noqa: E402
+from scripts.common.tushare_client import TushareClient  # noqa: E402
 
 WINDOW_DAYS = {"1m": 20, "3m": 60, "6m": 120, "12m": 250}
+# 默认多取 10 行 buffer:计算 12m 收益需要 latest + 250 行前的数据,共 251+ 行。
+DEFAULT_LOOKBACK = max(WINDOW_DAYS.values()) + 10
 
 
 def fetch_industry_index(
     client,
     index_code: str,
     analysis_date: str,
-    lookback_days: int = 250,
+    lookback_days: int = DEFAULT_LOOKBACK,
 ) -> pd.DataFrame:
     """
     获取申万行业指数日线,过去 lookback_days 个交易日,降序按 trade_date 排列。
@@ -52,11 +56,11 @@ def compute_window_returns(df: pd.DataFrame) -> dict[str, float | None]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--index-code", required=True, help="如 801123.SI(申万白酒)")
+    parser.add_argument("--index-code", required=True, help="如 801125.SI(申万白酒)")
     parser.add_argument("--analysis-date", required=True)
     parser.add_argument("--cache-dir", default="./data")
     parser.add_argument("--output", default="-")
-    parser.add_argument("--lookback-days", type=int, default=250)
+    parser.add_argument("--lookback-days", type=int, default=DEFAULT_LOOKBACK)
     args = parser.parse_args()
 
     cache = Cache(args.cache_dir)

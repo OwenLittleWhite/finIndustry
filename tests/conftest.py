@@ -16,7 +16,7 @@ def fixtures_dir():
 def mock_tushare_for_600519(fixtures_dir):
     """聚合 600519 端到端的 mock Tushare 客户端。"""
     classification = json.loads((fixtures_dir / "600519_classification.json").read_text())
-    industry_index = json.loads((fixtures_dir / "801123_index.json").read_text())
+    industry_index = json.loads((fixtures_dir / "801125_index.json").read_text())
     csi300 = json.loads((fixtures_dir / "csi300_index.json").read_text())
 
     client = MagicMock()

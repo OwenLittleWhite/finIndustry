@@ -12,7 +12,9 @@ import json
 import sys
 from pathlib import Path
 
-from scripts.common.akshare_client import AkshareClient
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.common.akshare_client import AkshareClient  # noqa: E402
 from scripts.common.cache import Cache
 
 

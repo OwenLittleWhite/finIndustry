@@ -6,7 +6,9 @@ import json
 import sys
 from pathlib import Path
 
-from jsonschema import Draft7Validator
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from jsonschema import Draft7Validator  # noqa: E402
 
 SCHEMA_PATH = Path(__file__).parent.parent / "shared_schemas" / "module_output_v1.schema.json"
 

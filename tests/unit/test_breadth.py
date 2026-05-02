@@ -15,7 +15,7 @@ def mock_client_with_constituents():
     def call_side_effect(api_name, **params):
         if api_name == "index_member_all":
             return pd.DataFrame([
-                {"con_code": f"00000{i}.SZ"} for i in range(10)
+                {"ts_code": f"00000{i}.SZ"} for i in range(10)
             ])
         if api_name == "daily":
             ts_code = params.get("ts_code", "")
@@ -31,7 +31,7 @@ def mock_client_with_constituents():
 def test_breadth_advance_decline_ratio(mock_client_with_constituents):
     result = compute_breadth_for_industry(
         mock_client_with_constituents,
-        industry_l2_code="801123.SI",
+        industry_l2_code="801125.SI",
         analysis_date="2026-04-30",
     )
     assert result["advance"] == 7

@@ -10,8 +10,11 @@ import json
 import sys
 from pathlib import Path
 
-from scripts.common.cache import Cache
-from scripts.common.tushare_client import TushareClient
+# 注入项目根到 sys.path,使脚本可以直接运行(`python scripts/.../foo.py`)。
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.common.cache import Cache  # noqa: E402
+from scripts.common.tushare_client import TushareClient  # noqa: E402
 
 
 def _normalize_ts_code(ticker: str) -> str:
@@ -32,7 +35,7 @@ def fetch_industry_classification(client, ticker: str) -> dict | None:
     """
     返回:
       {
-        "primary_industry": {"system": "申万二级", "code": "801123.SI", "name": "白酒"},
+        "primary_industry": {"system": "申万二级", "code": "801125.SI", "name": "白酒"},
         "l1_industry": {"code": "801120.SI", "name": "食品饮料"}
       }
     无分类返回 None。
