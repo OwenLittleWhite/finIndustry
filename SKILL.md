@@ -147,13 +147,21 @@ python scripts/leaders/compute_target_position.py \
 
 ### Step 4: 其他 3 个 agent(MVP 占位)
 
-基本面/资金/宏观政策 3 个 agent 暂未实现,生成占位 stub:
+**注意:这 3 个都是"行业层面"agent,不是个股层面** —— 个股财务/资金/公告归 financial-analysis / capital-flow-analysis / event-announcement-analysis 子 skill 处理,我们不碰。
+
+| Stub agent | 我们做的(行业层面) | 不做(个股层面,归其他子 skill) |
+|---|---|---|
+| `fundamentals`(行业基本面) | 行业 PE 历史分位、行业聚合 ROE / 营收 / 毛利率趋势 | 个股财报、个股估值 |
+| `capital_flow`(行业资金) | 板块主力净流入、北向行业偏好、行业 ETF 申赎、融资融券行业聚合 | 个股资金流、个股龙虎榜 |
+| `macro_policy`(行业宏观&政策) | 宏观→行业传导(白酒看 CPI、银行看利率)、行业政策催化 | 整体宏观、个股公告 |
+
+3 个 agent 暂未实现(Plan 2b 待跟其他子 skill 对齐边界后开工),先生成占位 stub:
 
 ```json
 {
-  "fundamentals":  {"score": 0, "confidence": 0.3, "note": "v2 will add"},
-  "capital_flow":  {"score": 0, "confidence": 0.3, "note": "v2 will add"},
-  "macro_policy":  {"score": 0, "confidence": 0.3, "note": "v2 will add"}
+  "fundamentals":  {"score": 0, "confidence": 0.3, "note": "v2 will add (行业聚合层面)"},
+  "capital_flow":  {"score": 0, "confidence": 0.3, "note": "v2 will add (行业聚合层面)"},
+  "macro_policy":  {"score": 0, "confidence": 0.3, "note": "v2 will add (行业聚合层面)"}
 }
 ```
 
