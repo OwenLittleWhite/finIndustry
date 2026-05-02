@@ -1,0 +1,158 @@
+{
+  "module_id": "industry_analysis",
+  "module_name": "行业分析模块",
+  "module_version": "1.0.0",
+  "schema_version": "module_output_v1",
+  "request_id": "req_20260430_smoke_v3",
+  "analysis_date": "2026-04-30",
+  "status": "partial",
+  "signal": "中性",
+  "score": -13,
+  "confidence": 0.40,
+  "reasons": [
+    "白酒II 12M -19.1%,显著跑输沪深300(+27.5%),行业系统性下行趋势明确",
+    "PB历史5年分位仅2.3%,估值处于极低水位,配置性价比高",
+    "ROE中位数从16.97%降至3.30%,景气度明显恶化,基本面承压",
+    "融资余额5日/20日各降约-31%/-30%,杠杆资金大幅撤退,资金面偏空",
+    "CPI温和+M2宽松(8.5%)+SHIBOR极低,宏观流动性对消费品整体友好"
+  ],
+  "risks": [
+    "行业景气下行未止,ROE恶化+营收增速不明,估值低但基本面仍在走弱",
+    "主力资金及北向资金数据缺失,真实资金态势存在较大不确定性",
+    "60日horizon内白酒行业动量持续为负,趋势可能延续",
+    "消费税政策不确定性仍存,超预期政策冲击是主要尾部风险",
+    "融资余额连续大幅下降,市场情绪极度悲观,可能引发负反馈"
+  ],
+  "summary": "白酒PB极低但景气下行+资金撤退,综合中性偏弱。",
+  "metrics": {
+    "latency_ms": 85000,
+    "data_sources_used": ["tushare"]
+  },
+  "module_specific": {
+    "classification": {
+      "primary_industry": {
+        "system": "申万二级",
+        "code": "801125.SI",
+        "name": "白酒Ⅱ"
+      },
+      "l1_industry": {
+        "code": "801120.SI",
+        "name": "食品饮料"
+      },
+      "related_concepts": [
+        {"name": "转融券标的", "code": "TS108", "heat_rank": 1},
+        {"name": "超级品牌", "code": "TS118", "heat_rank": 2},
+        {"name": "贵州国资改革", "code": "TS125", "heat_rank": 3}
+      ]
+    },
+    "agent_breakdown": {
+      "trend": {
+        "score": -60,
+        "confidence": 0.78,
+        "stage": "下行",
+        "key_signals": [
+          {"name": "return_1m", "value": -0.0479, "interpretation": "1M -4.8%,同期HS300+7.0%,跑输11.8pp"},
+          {"name": "return_3m", "value": -0.0185, "interpretation": "3M -1.9%,同期HS300+2.2%,跑输4.0pp"},
+          {"name": "return_6m", "value": -0.1209, "interpretation": "6M -12.1%,同期HS300+3.6%,跑输15.7pp"},
+          {"name": "return_12m", "value": -0.1907, "interpretation": "12M -19.1%,同期HS300+27.5%,跑输46.6pp"},
+          {"name": "breadth_ratio", "value": 0.1875, "interpretation": "当日涨跌比3/16=18.8%,极弱"},
+          {"name": "limit_up_count", "value": 0, "interpretation": "无涨停,情绪低迷"}
+        ]
+      },
+      "fundamentals": {
+        "score": 15,
+        "confidence": 0.68,
+        "stage": "见顶下行",
+        "valuation_percentile": {
+          "pe": 0.4305,
+          "pb": 0.0227
+        },
+        "key_signals": [
+          {"name": "pb_percentile_5y", "value": 0.0227, "interpretation": "PB历史5年分位2.3%,极度低估,潜在修复空间大"},
+          {"name": "pe_percentile_5y", "value": 0.4305, "interpretation": "PE历史5年分位43.1%,中性估值水平"},
+          {"name": "current_pe_median", "value": 27.71, "interpretation": "行业PE中位数27.7"},
+          {"name": "current_pb_median", "value": 2.55, "interpretation": "行业PB中位数2.55"},
+          {"name": "median_roe_trend", "value": "16.97%→3.30%", "interpretation": "ROE从2024Q3高点16.97%降至2026Q1的3.30%,景气明显恶化"},
+          {"name": "median_gross_margin_latest", "value": 0.6761, "interpretation": "毛利率67.6%,仍处高位但趋势小幅下滑"}
+        ]
+      },
+      "capital_flow": {
+        "score": -30,
+        "confidence": 0.25,
+        "main_inflow_5d_yi": null,
+        "northbound_change_5d_pct": null,
+        "margin_change_5d_pct": -0.3097,
+        "consensus": "partial_outflow",
+        "key_signals": [
+          {"name": "main_flow", "value": null, "interpretation": "akshare主力资金数据获取失败(网络/代理问题)"},
+          {"name": "northbound", "value": null, "interpretation": "北向资金数据不可用(hk_hold接口权限不足)"},
+          {"name": "margin_change_5d", "value": -0.3097, "interpretation": "融资余额5日下降30.97%,杠杆资金大幅撤退"},
+          {"name": "margin_change_20d", "value": -0.2997, "interpretation": "融资余额20日下降29.97%,中期持续去杠杆"},
+          {"name": "current_margin_balance_yi", "value": 225.22, "interpretation": "当前白酒行业融资余额约225亿元"}
+        ]
+      },
+      "leaders": {
+        "score": -10,
+        "confidence": 0.72,
+        "target_position": "绝对龙头",
+        "rank_in_industry": 1,
+        "rs_vs_leaders_avg_1m": 0.9941,
+        "rs_vs_leaders_avg_3m": 1.1021,
+        "key_signals": [
+          {"name": "rank_in_industry", "value": 1, "interpretation": "+2: 茅台市值173亿,绝对龙头,领先第二名五粮液4.6倍"},
+          {"name": "leaders_avg_1m", "value": -0.0455, "interpretation": "-1: 龙头5只1M平均-4.6%,集体下跌"},
+          {"name": "rs_vs_leaders_1m", "value": 0.9941, "interpretation": "-1: 茅台1M与龙头均值RS=0.994,略微跑输"},
+          {"name": "rs_vs_leaders_3m", "value": 1.1021, "interpretation": "+1: 茅台3M与龙头均值RS=1.10,跑赢龙头平均"},
+          {"name": "leaders_dispersion", "value": "4/5下跌(3M)", "interpretation": "-1: 龙头高度趋同下跌,仅茅台3M为正"}
+        ]
+      },
+      "macro_policy": {
+        "score": 20,
+        "confidence": 0.62,
+        "macro_alignment": "顺风",
+        "key_signals": [
+          {"name": "cpi_yoy_latest", "value": 1.0, "interpretation": "2026-03 CPI同比+1.0%,温和正增长,有利于消费品定价"},
+          {"name": "ppi_yoy_latest", "value": 0.5, "interpretation": "2026-03 PPI同比+0.5%,工业通缩首次转正,经济复苏信号"},
+          {"name": "m2_yoy_latest", "value": 8.5, "interpretation": "M2同比+8.5%,货币宽松,支持可选消费和资产价格"},
+          {"name": "m1_yoy_latest", "value": 5.1, "interpretation": "M1同比+5.1%,回升明显(2025年初仅1.5%),企业活动改善"},
+          {"name": "shibor_1y", "value": 1.472, "interpretation": "SHIBOR 1年期1.47%,极低利率环境,消费信贷成本低"},
+          {"name": "pmi", "value": null, "interpretation": "PMI数据不可用(接口积分不足),用其他指标推断"}
+        ]
+      }
+    },
+    "industry_outlook": {
+      "verdict": "中性偏弱",
+      "stage": "下行",
+      "horizon": "60d",
+      "rationale": "行业下行趋势明确(所有时间窗口跑输大盘),资金撤退,但PB极低+宏观顺风提供底部支撑,多空信号对冲后中性偏弱"
+    },
+    "stock_in_industry": {
+      "relative_position": "绝对龙头",
+      "industry_boost": 0,
+      "rationale": "行业综合-13中性偏弱,茅台绝对龙头地位使其相对抗跌,但行业整体走弱不足以带动个股方向性加速"
+    },
+    "weights_used": {
+      "trend": 0.20,
+      "fundamentals": 0.20,
+      "capital_flow": 0.20,
+      "leaders": 0.20,
+      "macro_policy": 0.20,
+      "_note": "horizon=60d 按5维度等权加权"
+    },
+    "score_calculation": {
+      "trend": {"score": -60, "weight": 0.20, "contribution": -12},
+      "fundamentals": {"score": 15, "weight": 0.20, "contribution": 3},
+      "capital_flow": {"score": -30, "weight": 0.20, "contribution": -6},
+      "leaders": {"score": -10, "weight": 0.20, "contribution": -2},
+      "macro_policy": {"score": 20, "weight": 0.20, "contribution": 4},
+      "final_score": -13
+    },
+    "data_quality_notes": {
+      "main_flow": "akshare网络失败(Connection aborted),主力资金数据全null",
+      "northbound": "hk_hold接口权限不足,北向资金数据null",
+      "pmi": "PMI接口积分不足,全null",
+      "financials_yoy": "fina_indicator YoY字段返回null(可能字段名差异或计算期问题)",
+      "available_data": ["tushare行业指数","tushare龙头数据","tushare PE/PB分位","tushare ROE/毛利率","融资余额","CPI/PPI/M2/M1/SHIBOR"]
+    }
+  }
+}
