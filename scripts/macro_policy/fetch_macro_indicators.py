@@ -98,16 +98,22 @@ def _fetch_ppi(pro: Any, start_m: str, end_m: str) -> list[dict] | None:
 
 
 def _fetch_pmi(pro: Any, start_m: str, end_m: str) -> list[dict] | None:
-    """PMI(5000积分门槛):失败或无权限则返回 None。"""
+    """PMI:必须传 fields 参数,否则 Tushare 返回大写字段名(65 列),无法读出值。
+
+    pmi010000 = 制造业 PMI 综合指数(>50 扩张,<50 收缩)
+    pmi020100 = 非制造业 PMI 综合指数
+    """
     try:
-        df = pro.cn_pmi(start_m=start_m, end_m=end_m)
+        df = pro.cn_pmi(start_m=start_m, end_m=end_m,
+                        fields="month,pmi010000,pmi020100")
         if df is None or df.empty:
             return None
         records = []
         for _, row in df.iterrows():
             records.append({
                 "month": _month_to_ym(row.get("month", "")),
-                "composite_pmi": _safe_float(row.get("pmi010000")),
+                "manufacturing_pmi": _safe_float(row.get("pmi010000")),
+                "non_manufacturing_pmi": _safe_float(row.get("pmi020100")),
             })
         records.sort(key=lambda r: r["month"], reverse=True)
         return records

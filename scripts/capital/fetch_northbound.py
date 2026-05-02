@@ -1,21 +1,22 @@
-"""北向资金行业偏好获取(港股通持股 → 行业聚合)。
+"""北向资金净流入(大盘级别,作为外资流向代理)。
+
+历史背景:Tushare 的 hk_hold 接口实际是"港股通持股"(大陆买港股),不能反查
+"陆股通持股"(北向资金持有 A 股)。Tushare 也没有"行业级别北向持股"的现成接口。
+
+折中方案:用 `moneyflow_hsgt` 拿**大盘级别**北向资金每日净流入,作为外资整体流向
+的代理信号。这不是行业级别,但能告诉 LLM 整体外资是流入还是流出 A 股,
+LLM 可以结合其他信号(主力 / 融资)判断对该行业的影响。
 
 数据流:
-1. index_member_all(l2_code=industry_l2_code, is_new='Y') → 行业成分股列表
-2. 对每个成分股调 hk_hold(ts_code=, start_date=, end_date=) → 日度港股通持股市值
-3. 按交易日加总所有成分股的持仓市值 → 行业北向持仓时间序列
-4. 计算近 5 / 10 交易日持仓变化率
-
-注意:
-- hk_hold 接口需要 ≥2000 积分
-- 持仓数据可能有缺失(并非所有 A 股都在港股通名单内)
-- 返回单位:万元
+1. 调 moneyflow_hsgt(start_date=, end_date=) 拿过去 ~30 自然日的每日数据
+2. 字段 north_money 单位是 **万元**(实测:350682.49 万元 = 35.07 亿,
+   与媒体报道的真实单日数字一致;Tushare 文档写"百万元"是错的)
+3. 输出今日 / 5d 累计 / 10d 累计的北向净流入(亿元)
 """
 from __future__ import annotations
 
 import argparse
 import json
-import logging
 import sys
 import warnings
 from datetime import datetime, timedelta
@@ -29,30 +30,14 @@ import pandas as pd  # noqa: E402
 from scripts.common.cache import Cache  # noqa: E402
 from scripts.common.tushare_client import TushareClient  # noqa: E402
 
-logger = logging.getLogger(__name__)
-
-# 往前拉多少自然日的数据(确保能覆盖 10 个交易日 + buffer)
-_LOOKBACK_DAYS = 20
+_LOOKBACK_DAYS = 30
 
 
-def _date_to_tushare(date_str: str) -> str:
-    """YYYY-MM-DD → YYYYMMDD"""
-    return date_str.replace("-", "")
-
-
-def _compute_change_pct(series: pd.Series, window: int) -> float | None:
-    """
-    给定按日期升序排列的持仓市值序列,计算最近 window 个交易日的变化百分比。
-
-    series: index 为交易日(升序), value 为持仓市值
-    """
-    if series is None or len(series) < window + 1:
+def _to_yi(wan: float | None) -> float | None:
+    """万元 → 亿元(1 亿元 = 10000 万元)。"""
+    if wan is None:
         return None
-    latest = float(series.iloc[-1])
-    past = float(series.iloc[-(window + 1)])
-    if past == 0:
-        return None
-    return (latest - past) / past
+    return float(wan) / 10000.0
 
 
 def fetch_northbound(
@@ -61,96 +46,65 @@ def fetch_northbound(
     analysis_date: str,
 ) -> dict:
     """
-    获取北向资金行业偏好。
+    获取大盘级别北向资金净流入(行业级数据 Tushare 不直接提供)。
 
-    参数:
-        client:           TushareClient 实例
-        industry_l2_code: 申万二级行业代码,如 "801125.SI"
-        analysis_date:    分析日期 YYYY-MM-DD
+    industry_l2_code 参数保留是为了 API 兼容,实际不参与查询(返回的是大盘级数据)。
 
     返回:
-        {
-          "industry_l2_code": str,
-          "current_holding_value": float | None,  # 当日北向持有该行业的总市值(万元)
-          "change_5d_pct":  float | None,         # 近 5 交易日持仓市值变化(%)
-          "change_10d_pct": float | None,
-        }
+      {
+        "industry_l2_code": str,
+        "scope": "market_level",                       # 提示这是大盘级别,非行业
+        "north_money_today_yi": float | None,          # 今日北向净流入(亿元)
+        "north_money_5d_yi": float | None,             # 近 5 交易日累计
+        "north_money_10d_yi": float | None,            # 近 10 交易日累计
+        "current_holding_value": None,                 # 兼容旧 schema 字段(永远 None)
+        "change_5d_pct": None,                         # 兼容旧 schema 字段
+        "change_10d_pct": None,                        # 兼容旧 schema 字段
+      }
+
+    > 行业聚合:无 — Tushare 没有行业级别接口
+    > LLM 推理:用市场级别北向 + 其他信号(主力/融资)对行业层面做归纳
     """
-    _empty: dict = {
+    empty: dict = {
         "industry_l2_code": industry_l2_code,
+        "scope": "market_level",
+        "north_money_today_yi": None,
+        "north_money_5d_yi": None,
+        "north_money_10d_yi": None,
         "current_holding_value": None,
         "change_5d_pct": None,
         "change_10d_pct": None,
     }
 
     try:
-        # ── Step 1: 行业成分股 ──────────────────────────────────────────────
-        members_df = client.call("index_member_all", l2_code=industry_l2_code, is_new="Y")
-        if members_df is None or members_df.empty or "ts_code" not in members_df.columns:
-            return _empty
-
-        member_codes: list[str] = members_df["ts_code"].tolist()
-
-        # ── Step 2: 拉各成分股港股通持股 ────────────────────────────────────
-        end_date = _date_to_tushare(analysis_date)
+        end_date = analysis_date.replace("-", "")
         start_dt = datetime.strptime(analysis_date, "%Y-%m-%d") - timedelta(days=_LOOKBACK_DAYS)
         start_date = start_dt.strftime("%Y%m%d")
 
-        all_holdings: list[pd.DataFrame] = []
-        for ts_code in member_codes:
-            try:
-                df = client.call(
-                    "hk_hold",
-                    ts_code=ts_code,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
-                if df is not None and not df.empty:
-                    all_holdings.append(df)
-            except (ConnectionError, TimeoutError, OSError):
-                # 单只股票失败不影响整体,继续
-                continue
+        df = client.call("moneyflow_hsgt", start_date=start_date, end_date=end_date)
+        if df is None or df.empty or "north_money" not in df.columns:
+            return empty
 
-        if not all_holdings:
-            return _empty
+        # 按 trade_date 升序
+        df = df.sort_values("trade_date").reset_index(drop=True)
+        df["north_money"] = pd.to_numeric(df["north_money"], errors="coerce")
 
-        # ── Step 3: 按交易日聚合 ────────────────────────────────────────────
-        combined = pd.concat(all_holdings, ignore_index=True)
+        if df.empty:
+            return empty
 
-        # hk_hold 返回字段: trade_date, ts_code, exchg, vol, ratio, avg_price, close, market_value
-        # market_value 单位是万元
-        value_col = None
-        for col in ("market_value", "vol"):
-            if col in combined.columns:
-                value_col = col
-                break
-
-        if value_col is None:
-            return _empty
-
-        # 转为数值
-        combined[value_col] = pd.to_numeric(combined[value_col], errors="coerce").fillna(0.0)
-
-        # 按交易日加总
-        daily_agg = (
-            combined.groupby("trade_date")[value_col]
-            .sum()
-            .sort_index()  # 升序
-        )
-
-        if daily_agg.empty:
-            return _empty
-
-        # ── Step 4: 计算变化率 ───────────────────────────────────────────────
-        current_value = float(daily_agg.iloc[-1])
-        change_5d = _compute_change_pct(daily_agg, window=5)
-        change_10d = _compute_change_pct(daily_agg, window=10)
+        today_million = float(df.iloc[-1]["north_money"]) if pd.notna(df.iloc[-1]["north_money"]) else None
+        last_5 = df["north_money"].dropna().tail(5).sum() if len(df) >= 5 else None
+        last_10 = df["north_money"].dropna().tail(10).sum() if len(df) >= 10 else None
 
         return {
             "industry_l2_code": industry_l2_code,
-            "current_holding_value": current_value,
-            "change_5d_pct": change_5d,
-            "change_10d_pct": change_10d,
+            "scope": "market_level",
+            "north_money_today_yi": _to_yi(today_million),
+            "north_money_5d_yi": _to_yi(float(last_5)) if last_5 is not None else None,
+            "north_money_10d_yi": _to_yi(float(last_10)) if last_10 is not None else None,
+            "current_holding_value": None,
+            "change_5d_pct": None,
+            "change_10d_pct": None,
         }
 
     except (ConnectionError, TimeoutError, OSError) as exc:
@@ -158,20 +112,15 @@ def fetch_northbound(
             f"fetch_northbound: 网络错误,返回全 None 字段。原因: {exc}",
             stacklevel=2,
         )
-        return _empty
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
+        return empty
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="获取北向资金行业偏好(港股通持股聚合)")
-    parser.add_argument("--industry-l2-code", required=True, help="申万二级行业代码,如 801125.SI")
-    parser.add_argument("--analysis-date", required=True, help="分析日期 YYYY-MM-DD")
+    parser = argparse.ArgumentParser(description="北向资金净流入(大盘级别代理)")
+    parser.add_argument("--industry-l2-code", required=True)
+    parser.add_argument("--analysis-date", required=True)
     parser.add_argument("--cache-dir", default="./data")
-    parser.add_argument("--output", default="-", help="输出路径,'-' 表示 stdout")
+    parser.add_argument("--output", default="-")
     args = parser.parse_args()
 
     cache = Cache(args.cache_dir)

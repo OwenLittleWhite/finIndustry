@@ -4,7 +4,11 @@
 1. index_member_all(l2_code=, is_new='Y') → 行业成分股 ts_code 列表
 2. 对每个成分股调 fina_indicator(ts_code=) 拉全量已发布财务指标
 3. 按 end_date 字段聚合到季度 bucket(取 analysis_date 之前完结的季度)
-4. 输出行业聚合营收/利润 YoY 增速 + ROE/毛利率中位数
+4. 输出行业聚合营收/利润 YoY 中位数 + ROE/毛利率中位数
+
+Note: fina_indicator 接口直接返回 or_yoy(营收 YoY)和 netprofit_yoy(净利润 YoY)
+字段(单位:百分点,如 6.538 表示 6.538%)。我们对成分股取中位数后**除以 100** 转成 decimal
+形式(如 0.06538),与其他 return 字段保持一致。
 """
 from __future__ import annotations
 
@@ -75,20 +79,11 @@ def _derive_quarter_list(analysis_date: str, quarters: int) -> list[tuple[str, s
 # ---------------------------------------------------------------------------
 
 
-def _compute_yoy(current: float | None, prior: float | None) -> float | None:
-    """YoY = current / prior - 1,prior 为 0 或 None 则返回 None。"""
-    if current is None or prior is None:
-        return None
-    if prior == 0:
-        return None
-    return (current - prior) / abs(prior)
-
-
 def _aggregate_quarter(
     all_fina: pd.DataFrame,
     end_date: str,
     field: str,
-    agg: str = "sum",
+    agg: str = "median",
 ) -> float | None:
     """
     从全量 fina_indicator 数据中,按 end_date 过滤当季数据,
@@ -104,6 +99,13 @@ def _aggregate_quarter(
     if agg == "median":
         return float(quarter_df.median())
     return None
+
+
+def _pct_to_decimal(pct: float | None) -> float | None:
+    """Tushare YoY 返回单位是百分点(如 6.538),转成 decimal(0.06538)。"""
+    if pct is None:
+        return None
+    return pct / 100.0
 
 
 # ---------------------------------------------------------------------------
@@ -171,8 +173,12 @@ def fetch_industry_financials(
             continue
         if df is None or df.empty:
             continue
-        # 只保留需要的列
-        needed = {"ts_code", "end_date", "revenue", "n_income_attr_p", "roe", "grossprofit_margin"}
+        # 只保留需要的列。
+        # 注意:fina_indicator 不返回原始 revenue/profit,但有现成的 yoy 字段
+        # - or_yoy: 营收 YoY(百分点)
+        # - netprofit_yoy / dt_netprofit_yoy: 归母净利润 YoY(百分点)
+        needed = {"ts_code", "end_date", "or_yoy", "netprofit_yoy",
+                  "roe", "grossprofit_margin"}
         available = needed & set(df.columns)
         fina_frames.append(df[list(available)].copy())
 
@@ -200,15 +206,13 @@ def fetch_industry_financials(
             _aggregate_quarter(all_fina, end_date, "grossprofit_margin", "median")
         )
 
-        # YoY: 找去年同期 end_date(季度末 -1 年 = 同月同日)
-        prior_year = str(int(end_date[:4]) - 1) + end_date[4:]
-        current_rev = _aggregate_quarter(all_fina, end_date, "revenue", "sum")
-        prior_rev = _aggregate_quarter(all_fina, prior_year, "revenue", "sum")
-        agg_revenue_yoy.append(_compute_yoy(current_rev, prior_rev))
+        # YoY: 直接读 fina_indicator 返回的 or_yoy / netprofit_yoy 字段(百分点)
+        # 取行业成分股的中位数 YoY,然后转成 decimal
+        rev_yoy_pct = _aggregate_quarter(all_fina, end_date, "or_yoy", "median")
+        agg_revenue_yoy.append(_pct_to_decimal(rev_yoy_pct))
 
-        current_profit = _aggregate_quarter(all_fina, end_date, "n_income_attr_p", "sum")
-        prior_profit = _aggregate_quarter(all_fina, prior_year, "n_income_attr_p", "sum")
-        agg_profit_yoy.append(_compute_yoy(current_profit, prior_profit))
+        profit_yoy_pct = _aggregate_quarter(all_fina, end_date, "netprofit_yoy", "median")
+        agg_profit_yoy.append(_pct_to_decimal(profit_yoy_pct))
 
     return {
         "industry_l2_code": industry_l2_code,
