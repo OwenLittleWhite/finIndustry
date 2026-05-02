@@ -2,7 +2,7 @@
 
 > stock-forecast-system 的**行业分析子 skill**。输入 A 股股票代码 → 输出该股**所属行业层面**的走势、龙头、景气度分析,作为总控合成最终预测的"行业维度"输入。
 
-**状态**:🟢 v1.1 / Plan 2a 已交付 / 64 测试全过 / 真实 Tushare 数据已跑通
+**状态**:🟢 v1.1 / Plan 2b 已交付 / **91 测试全过** / **5 个 analyst agent 全激活** / 真实 Tushare 数据已跑通
 
 ---
 
@@ -41,12 +41,12 @@ Top 5 白酒龙头:
 |---|---|---|
 | 行业走势 | ✅ Plan 1 | 申万二级指数 + 沪深 300 + 行业内涨跌家数 |
 | 龙头分析 | ✅ Plan 2a | Top 5 市值龙头 + 1M/3M 涨跌 + 估值 + 目标股位置 |
-| 行业基本面(行业 PE 分位、行业 ROE 聚合)| ⏳ Plan 2b stub | 待跟 financial-analysis 对齐边界 |
-| 行业资金流(板块主力 / 北向 / ETF) | ⏳ Plan 2b stub | 待跟 capital-flow-analysis 对齐边界 |
-| 行业宏观&政策(宏观→行业传导) | ⏳ Plan 2b stub | 待跟 macro-analysis / event 对齐边界 |
-| 看多/看空辩论 + 裁判 | 📋 Plan 3 | 5 agent 都激活后再做 |
+| 行业基本面 | ✅ Plan 2b | 行业聚合营收/利润 YoY、ROE 中位数、**PE/PB 历史 5 年分位** |
+| 行业资金流 | ✅ Plan 2b | 板块主力(akshare)+ 北向(hk_hold 聚合)+ 融资余额(margin_detail 聚合)|
+| 行业宏观&政策 | ✅ Plan 2b | CPI / PPI / PMI / M0/M1/M2 / SHIBOR(LLM 做"宏观→行业传导"判断)|
+| 看多/看空辩论 + 综合裁判 | 📋 Plan 3 | 5 agent 已激活,可加辩论层提升判断质量 |
 
-**重要**:Plan 2b 的 3 个 agent 跟其他子 skill 名字看起来撞,但**我们做的是行业聚合层面**,不是个股层面。具体边界见 [docs/integration.md 第 2 / 9 节](docs/integration.md)。
+**5 agent 都是"行业聚合层面"**,跟个股层面 sub-skill(financial-analysis / capital-flow-analysis / event-announcement-analysis / macro-analysis)互补。具体边界见 [docs/integration.md 第 2 节](docs/integration.md)。
 
 ---
 
@@ -118,10 +118,13 @@ finIndustry/
 │   ├── classification/ (申万二级 + 概念映射)
 │   ├── trend/          (行业指数 + 大盘 + breadth) — Plan 1
 │   ├── leaders/        (Top 5 龙头 + 目标股位置) — Plan 2a
+│   ├── fundamentals/   (行业聚合财务 + PE/PB 历史分位) — Plan 2b
+│   ├── capital/        (行业主力 / 北向 / 融资融券) — Plan 2b
+│   ├── macro_policy/   (CPI/PPI/PMI/M2/SHIBOR) — Plan 2b
 │   └── output_validator.py
 ├── shared_schemas/                       # JSON Schema
-├── tests/                                # 64 测试
-│   ├── unit/, integration/, fixtures/
+├── tests/                                # 91 测试
+│   ├── unit/(每个 agent 都有专门测试),integration/, fixtures/
 │   └── conftest.py
 ├── docs/                                 # 文档
 └── outputs/                              # 真实数据跑出来的 JSON 样本
@@ -141,15 +144,19 @@ finIndustry/
 
 ---
 
-## 给总控负责人的 3 个开放问题
+## 给总控负责人的对齐建议
 
-(开发 Plan 2b 之前必须对齐,**详见 [docs/integration.md 第 9 节](docs/integration.md)**:)
+> Plan 2b 已交付,5 个 agent 都做的是**行业聚合层面**(跟个股层面互补)。但仍建议跟其他 sub-skill 负责人对齐,确保信号合成时不重复加权。
 
-1. 行业层面"资金流"归我做,还是 capital-flow-analysis 子 skill 做?
-2. 行业层面"基本面聚合"归我做,还是 financial-analysis 做?
-3. 行业层面"政策催化"归我做,还是 event-announcement-analysis 做?
+| 我们做(行业聚合) | 其他 sub-skill(个股层面) |
+|---|---|
+| 行业聚合 PE 历史分位、行业 ROE 趋势 | financial-analysis 做个股 PE / 个股 ROE |
+| 板块主力净流入、北向行业偏好、融资余额行业聚合 | capital-flow-analysis 做个股资金流 / 个股龙虎榜 |
+| 宏观→行业传导(CPI/PPI/PMI/M2/SHIBOR + 行业敏感度) | macro-analysis 做整体宏观 / event 做个股公告 |
 
-回答完这 3 个问题,Plan 2b 才能开工。
+**总控合成时**,行业 skill 和个股层面 sub-skill 给的是**互补的两种信号**(行业 β + 个股 alpha),应分别加权,不重复。
+
+详见 [docs/integration.md 第 2 / 6 节](docs/integration.md)。
 
 ---
 

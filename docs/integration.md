@@ -24,24 +24,31 @@
 
 ---
 
-## 2. 当前能力(v1.1)
+## 2. 当前能力
 
-已激活 2 个 analyst agent:
+✅ **5 个 analyst agent 全部激活**(都是"行业聚合层面",跟个股层面 sub-skill 互补):
 
-| Agent | 输入 | 信号 |
+| Agent | 数据脚本 | 关键信号 |
 |---|---|---|
-| 行业走势 | 申万二级行业指数日线 + 沪深 300 + 行业内涨跌家数 | 行业趋势阶段、行业 vs 大盘 RS、breadth |
-| 龙头分析 | 行业 Top 5 市值龙头 + 各自 1M/3M 涨跌 + 估值 | 目标股位置标签(绝对龙头/二线/跟随/落后)、RS vs 龙头平均 |
+| 行业走势 | `scripts/trend/` | 申万二级指数 1M/3M/6M/12M、行业 vs 沪深 300 RS、行业内涨跌家数 |
+| 行业基本面 | `scripts/fundamentals/` | 行业聚合营收/利润 YoY、ROE 中位数、**PE/PB 历史 5 年分位** |
+| 行业资金流 | `scripts/capital/` | 板块主力(akshare)+ 北向(hk_hold 聚合)+ 融资余额(margin_detail 聚合)|
+| 龙头分析 | `scripts/leaders/` | Top 5 市值龙头 + 各自 1M/3M 涨跌 + 估值 + 目标股位置标签 |
+| 行业宏观&政策 | `scripts/macro_policy/` | CPI/PPI/PMI/M0/M1/M2/SHIBOR;LLM 在 prompt 里做"宏观→行业"传导判断 |
 
-stub 中(占位返回 0,等 Plan 2b)。**这 3 个都是"行业层面"**,不是个股层面:
+每个 agent 输出 `score` (-100~100) 和 `confidence` (0~1),裁判按 horizon-aware 权重综合。
 
-| Stub agent | 我们做的(行业聚合) | 不做(个股层面,归其他子 skill) |
-|---|---|---|
-| `fundamentals` | 行业 PE 历史分位、行业聚合 ROE / 营收 / 毛利率趋势 | 个股财报 → financial-analysis |
-| `capital_flow` | 板块主力净流入、北向行业偏好、行业 ETF 申赎、融资融券行业聚合 | 个股资金 → capital-flow-analysis |
-| `macro_policy` | 宏观→行业传导(白酒看 CPI、银行看利率)、行业政策催化 | 个股公告 → event-announcement-analysis;整体宏观 → macro-analysis |
+### 跟其他 sub-skill 的边界
 
-> **Plan 2b 边界仍需跟你对齐**:这 3 个 agent 名字跟你的子 skill 撞名,但我们做的是**行业聚合层面**(不重叠)还是**有部分重叠**,需要确认 — 见第 9 节 3 个问题。
+我们做的全是"行业聚合层面",和个股层面 sub-skill 互补:
+
+| 我们的领地(行业聚合) | 其他 sub-skill(个股) |
+|---|---|
+| 行业 PE 历史分位、行业 ROE 中位数趋势 | financial-analysis(个股财报) |
+| 板块主力净流入、北向行业偏好、融资余额行业聚合 | capital-flow-analysis(个股资金/龙虎榜) |
+| 宏观→行业传导(行业敏感度) | macro-analysis(整体宏观);event-announcement-analysis(个股公告) |
+
+总控合成时,**行业 β + 个股 alpha** 是两种互补信号,应**分别加权,不重复**。
 
 ---
 
@@ -280,15 +287,27 @@ Skill({
 
 ---
 
-## 9. 等你确认的 3 个问题
+## 9. 跟你的对齐建议(Plan 2b 已交付,但仍可优化)
 
-> 这是 Plan 2b(基本面/资金/政策 3 个 agent)动工**之前**必须对齐的:
+5 个 agent 已实现,做的都是"行业聚合层面"。如果你的其他 sub-skill 也做行业聚合,可以这样选择:
 
-1. **行业资金 vs capital-flow-analysis**:你做个股资金流,还是也做行业层面(板块净流入、北向行业偏好、ETF)?如果你做行业层面,我这个 agent 就**砍掉**直接消费你的输出。
-2. **行业基本面 vs financial-analysis**:你做个股财报,还是也做行业聚合(行业 PE 中枢、行业 ROE 趋势)?
-3. **行业政策 vs event-announcement-analysis**:你做个股公告,还是也做行业政策(政府文件、产业链事件)?
+**情况 A:其他 sub-skill 只做个股层面**(预期主流)
 
-回答这 3 个问题后,我们就能继续 Plan 2b。
+→ 我们和其他 sub-skill 信号互补,**双方都保留,总控分别加权**。
+
+**情况 B:其他 sub-skill 也做行业聚合**(需要协调)
+
+→ 推荐二选一,避免双重加权:
+- 选项 1:**砍我们的对应 agent**,直接消费对方输出
+- 选项 2:**砍对方的行业聚合**,我们这边继续
+
+具体到 3 个 agent:
+
+1. **`capital_flow` agent**:capital-flow-analysis 是只做个股,还是也做板块资金流?
+2. **`fundamentals` agent**:financial-analysis 是只做个股财报,还是也做行业 PE 历史分位 / 行业 ROE 聚合?
+3. **`macro_policy` agent**:event-announcement 做个股公告,我们做"宏观→行业敏感度",有重叠吗?
+
+如果对方都只做个股,本 skill 现状就是最终形态。
 
 ---
 
