@@ -1,21 +1,30 @@
-"""行业主力资金净流入获取。
+"""行业主力资金净流入(Tushare moneyflow 聚合到行业)。
+
+历史:
+  v1 用 akshare stock_sector_fund_flow_rank,在用户 Clash TUN 模式代理下完全不可达
+  (TCP 连接 OK 但 HTTP 不响应,代码层 NO_PROXY 也绕不过)。
+
+  v2(本版本):改用 Tushare `moneyflow` 基础接口
+  - 对每只行业成分股拉过去 ~15 自然日的逐日资金流(net_mf_amount = 大单+特大单 净流入)
+  - 按 trade_date 聚合 → 行业级日度主力净流入
+  - 输出 today / 5d / 10d 累计
 
 数据流:
-1. akshare stock_sector_fund_flow_rank(indicator="今日") → 所有板块今日主力资金流
-2. akshare stock_sector_fund_flow_rank(indicator="5日")  → 近 5 日累计
-3. akshare stock_sector_fund_flow_rank(indicator="10日") → 近 10 日累计
-4. 通过"名称"列模糊匹配目标 industry_name
-5. 提取"今日主力净流入-净额"列并转为亿元
+  1. index_member_all(l2_code=, is_new='Y') → 成分股 ts_code 列表
+  2. 对每只成分股 moneyflow(ts_code=, start_date=, end_date=) 拉 ~15 天 daily
+  3. 合并 + groupby trade_date + sum(net_mf_amount) → 行业日度主力流入
+  4. 单位换算:net_mf_amount 字段单位是**万元**,/10000 → 亿元
 
-注意:akshare 数据为截至当日的实时/当日数据,不支持历史回查。
+注意:moneyflow 接口对每只股单独调用,~20 只成分股 = ~20 次 API 调用,
+moneyflow 限流较宽松(实测连 5 次每次 < 1s)。
 """
 from __future__ import annotations
 
 import argparse
 import json
-import logging
 import sys
 import warnings
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -23,152 +32,108 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import pandas as pd  # noqa: E402
 
-from scripts.common.akshare_client import AkshareClient  # noqa: E402
 from scripts.common.cache import Cache  # noqa: E402
+from scripts.common.tushare_client import TushareClient  # noqa: E402
 
-logger = logging.getLogger(__name__)
+# 拉过去 ~15 自然日,确保覆盖 10 个交易日 + buffer
+_LOOKBACK_DAYS = 20
 
-# 板块资金流列名映射(akshare 版本可能有细微差异,按优先级尝试)
-_TODAY_NET_FLOW_COLS = [
-    "今日主力净流入-净额",
-    "今日主力净额",
-]
-_5D_NET_FLOW_COLS = [
-    "5日主力净流入-净额",
-    "5日主力净额",
-]
-_10D_NET_FLOW_COLS = [
-    "10日主力净流入-净额",
-    "10日主力净额",
-]
-
-# 万元 → 亿元
+# net_mf_amount 单位是万元,/10000 → 亿元
 _WAN_TO_YI = 1e-4
-
-
-def _extract_net_flow_yi(df: pd.DataFrame, col_candidates: list[str]) -> float | None:
-    """从 DataFrame 中提取第一行的主力净流入值,转换为亿元。"""
-    if df is None or df.empty:
-        return None
-    for col in col_candidates:
-        if col in df.columns:
-            val = df.iloc[0][col]
-            if pd.isna(val):
-                return None
-            # akshare 返回单位是元,需要转为亿元(除以 1e8)
-            try:
-                return float(val) / 1e8
-            except (ValueError, TypeError):
-                return None
-    return None
-
-
-def _fuzzy_match_industry(df: pd.DataFrame, industry_name: str) -> pd.DataFrame:
-    """
-    在 '名称' 列中模糊匹配 industry_name。
-
-    规则:
-    1. 精确匹配优先
-    2. 精确匹配失败时,对 industry_name 去掉尾缀"Ⅱ""I""II"等再匹配
-    3. 退而求其次:包含关系匹配(industry_name 包含在板块名中,或板块名包含在 industry_name 中)
-    """
-    if df is None or df.empty or "名称" not in df.columns:
-        return pd.DataFrame()
-
-    # 精确匹配
-    exact = df[df["名称"] == industry_name]
-    if not exact.empty:
-        return exact.head(1)
-
-    # 去尾缀后匹配(如"白酒Ⅱ" → "白酒")
-    stripped = industry_name.rstrip("ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩIVXiivx").strip()
-    if stripped and stripped != industry_name:
-        stripped_match = df[df["名称"] == stripped]
-        if not stripped_match.empty:
-            return stripped_match.head(1)
-
-    # 包含匹配(板块名包含 stripped 或 stripped 包含在板块名中)
-    if stripped:
-        contains = df[df["名称"].str.contains(stripped, na=False, regex=False)]
-        if not contains.empty:
-            return contains.head(1)
-
-    # 包含匹配(用原名)
-    contains_orig = df[df["名称"].str.contains(industry_name, na=False, regex=False)]
-    if not contains_orig.empty:
-        return contains_orig.head(1)
-
-    return pd.DataFrame()
 
 
 def fetch_main_flow(
     client: Any,
-    industry_name: str,
+    industry_l2_code: str,
     analysis_date: str,
 ) -> dict:
     """
-    获取行业主力资金净流入。
+    获取行业主力资金净流入(基于 Tushare moneyflow + 行业成分股聚合)。
 
     参数:
-        client:        AkshareClient 实例
-        industry_name: 中文板块名,如"白酒Ⅱ" / "白酒"
-        analysis_date: 分析日期 YYYY-MM-DD(akshare 不支持历史回查,此参数主要用于记录)
+        client:           TushareClient 实例
+        industry_l2_code: 申万二级行业代码,如 "801125.SI"
+        analysis_date:    分析日期 YYYY-MM-DD
 
     返回:
-        {
-          "industry_name": str,
-          "main_inflow_today_yi": float | None,    # 今日主力净流入(亿元)
-          "main_inflow_5d_yi":    float | None,    # 近 5 日累计
-          "main_inflow_10d_yi":   float | None,
-          "rank_in_all_sectors_today": int | None, # 今日在所有板块中的排名(越前越多流入)
-        }
+      {
+        "industry_l2_code": str,
+        "main_inflow_today_yi": float | None,    # 当日行业主力净流入(亿元,= 大单+特大单 净流入)
+        "main_inflow_5d_yi":    float | None,    # 近 5 个交易日累计
+        "main_inflow_10d_yi":   float | None,    # 近 10 个交易日累计
+        "constituent_count":    int,
+        "data_source":          "tushare.moneyflow",
+      }
+
+    任何成分股调用失败不阻塞整体,继续聚合;全部成分股都失败 → 返回 None 字段。
     """
-    _empty: dict = {
-        "industry_name": industry_name,
+    empty: dict = {
+        "industry_l2_code": industry_l2_code,
         "main_inflow_today_yi": None,
         "main_inflow_5d_yi": None,
         "main_inflow_10d_yi": None,
-        "rank_in_all_sectors_today": None,
+        "constituent_count": 0,
+        "data_source": "tushare.moneyflow",
     }
 
     try:
-        # ── 今日资金流(含排名) ───────────────────────────────────────────
-        today_df = client.call("stock_sector_fund_flow_rank", indicator="今日")
-        matched_today = _fuzzy_match_industry(today_df, industry_name)
+        # ── Step 1: 行业成分股 ──────────────────────────────────────────────
+        members_df = client.call("index_member_all", l2_code=industry_l2_code, is_new="Y")
+        if members_df is None or members_df.empty or "ts_code" not in members_df.columns:
+            return empty
 
-        main_inflow_today_yi: float | None = None
-        rank_today: int | None = None
+        member_codes: list[str] = members_df["ts_code"].dropna().unique().tolist()
+        if not member_codes:
+            return empty
 
-        if not matched_today.empty:
-            main_inflow_today_yi = _extract_net_flow_yi(matched_today, _TODAY_NET_FLOW_COLS)
-            # 排名:在全量 today_df 里找该行的位置(按主力净额降序排列时的位次)
-            if not today_df.empty and "名称" in today_df.columns:
-                matched_name = matched_today.iloc[0]["名称"]
-                # 按今日主力净额降序排名
-                for col in _TODAY_NET_FLOW_COLS:
-                    if col in today_df.columns:
-                        ranked = today_df.sort_values(col, ascending=False).reset_index(drop=True)
-                        found = ranked[ranked["名称"] == matched_name]
-                        if not found.empty:
-                            rank_today = int(found.index[0]) + 1
-                        break
+        # ── Step 2: 拉每只成分股的过去 ~15 自然日资金流 ──────────────────────
+        end_date = analysis_date.replace("-", "")
+        start_dt = datetime.strptime(analysis_date, "%Y-%m-%d") - timedelta(days=_LOOKBACK_DAYS)
+        start_date = start_dt.strftime("%Y%m%d")
 
-        # ── 近 5 日资金流 ────────────────────────────────────────────────
-        df_5d = client.call("stock_sector_fund_flow_rank", indicator="5日")
-        matched_5d = _fuzzy_match_industry(df_5d, industry_name)
-        main_inflow_5d_yi = _extract_net_flow_yi(matched_5d, _5D_NET_FLOW_COLS)
+        all_flows: list[pd.DataFrame] = []
+        for ts_code in member_codes:
+            try:
+                df = client.call(
+                    "moneyflow",
+                    ts_code=ts_code,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+                if df is not None and not df.empty and "net_mf_amount" in df.columns:
+                    all_flows.append(df[["trade_date", "ts_code", "net_mf_amount"]])
+            except (ConnectionError, TimeoutError, OSError):
+                continue
 
-        # ── 近 10 日资金流 ───────────────────────────────────────────────
-        df_10d = client.call("stock_sector_fund_flow_rank", indicator="10日")
-        matched_10d = _fuzzy_match_industry(df_10d, industry_name)
-        main_inflow_10d_yi = _extract_net_flow_yi(matched_10d, _10D_NET_FLOW_COLS)
+        if not all_flows:
+            return {**empty, "constituent_count": len(member_codes)}
+
+        combined = pd.concat(all_flows, ignore_index=True)
+        combined["net_mf_amount"] = pd.to_numeric(combined["net_mf_amount"], errors="coerce")
+
+        # ── Step 3: 按交易日聚合 ────────────────────────────────────────────
+        daily_industry = (
+            combined.dropna(subset=["net_mf_amount"])
+            .groupby("trade_date")["net_mf_amount"]
+            .sum()
+            .sort_index()  # 升序
+        )
+
+        if daily_industry.empty:
+            return {**empty, "constituent_count": len(member_codes)}
+
+        # ── Step 4: 转亿元 + 累计 ────────────────────────────────────────────
+        today_wan = float(daily_industry.iloc[-1])
+        last_5 = daily_industry.tail(5).sum() if len(daily_industry) >= 5 else None
+        last_10 = daily_industry.tail(10).sum() if len(daily_industry) >= 10 else None
 
         return {
-            "industry_name": industry_name,
-            "main_inflow_today_yi": main_inflow_today_yi,
-            "main_inflow_5d_yi": main_inflow_5d_yi,
-            "main_inflow_10d_yi": main_inflow_10d_yi,
-            "rank_in_all_sectors_today": rank_today,
+            "industry_l2_code": industry_l2_code,
+            "main_inflow_today_yi": today_wan * _WAN_TO_YI,
+            "main_inflow_5d_yi": float(last_5) * _WAN_TO_YI if last_5 is not None else None,
+            "main_inflow_10d_yi": float(last_10) * _WAN_TO_YI if last_10 is not None else None,
+            "constituent_count": len(member_codes),
+            "data_source": "tushare.moneyflow",
         }
 
     except (ConnectionError, TimeoutError, OSError) as exc:
@@ -176,28 +141,23 @@ def fetch_main_flow(
             f"fetch_main_flow: 网络错误,返回全 None 字段。原因: {exc}",
             stacklevel=2,
         )
-        return _empty
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
+        return empty
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="获取行业主力资金净流入(板块级别)")
-    parser.add_argument("--industry-name", required=True, help="板块中文名,如 '白酒'")
+    parser = argparse.ArgumentParser(description="行业主力资金净流入(Tushare moneyflow 聚合)")
+    parser.add_argument("--industry-l2-code", required=True, help="申万二级行业代码,如 801125.SI")
     parser.add_argument("--analysis-date", required=True, help="分析日期 YYYY-MM-DD")
     parser.add_argument("--cache-dir", default="./data")
     parser.add_argument("--output", default="-", help="输出路径,'-' 表示 stdout")
     args = parser.parse_args()
 
     cache = Cache(args.cache_dir)
-    client = AkshareClient(cache=cache, analysis_date=args.analysis_date)
+    client = TushareClient(cache=cache, analysis_date=args.analysis_date)
 
     result = fetch_main_flow(
         client,
-        industry_name=args.industry_name,
+        industry_l2_code=args.industry_l2_code,
         analysis_date=args.analysis_date,
     )
 

@@ -166,7 +166,7 @@ python scripts/fundamentals/fetch_industry_valuation.py \
 
 ```bash
 python scripts/capital/fetch_main_flow.py \
-  --industry-name "{l2_name}" --analysis-date {analysis_date} \
+  --industry-l2-code {l2_code} --analysis-date {analysis_date} \
   --cache-dir ./data --output -
 
 python scripts/capital/fetch_northbound.py \
