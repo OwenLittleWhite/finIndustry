@@ -1,0 +1,77 @@
+{
+  "module_id": "industry_analysis",
+  "module_name": "行业分析模块",
+  "module_version": "1.0.0",
+  "schema_version": "module_output_v1",
+  "request_id": "req_20260430_smoke_001",
+  "analysis_date": "2026-04-30",
+  "status": "partial",
+  "signal": "看空",
+  "score": -45,
+  "confidence": 0.5,
+  "reasons": [
+    "白酒行业6M跌幅-12.09%,同期沪深300涨+4.36%,相对强度-16.45%,中长期跑输显著",
+    "白酒行业12M跌幅-19.06%,沪深300同期涨+27.42%,结构性弱势持续超1年",
+    "今日行业内3涨16跌1平,涨跌比仅15.79%,无涨停,板块整体偏弱",
+    "MVP阶段仅基于走势维度判断,基本面/资金/龙头/宏观维度待v2补全"
+  ],
+  "risks": [
+    "行业3M跌幅仅-1.85%,跌速放缓,若估值见底可能阶段反弹被误判为下行",
+    "MVP仅看走势维度,缺资金流/龙头/政策信号,可能低估政策催化力度"
+  ],
+  "summary": "白酒行业持续跑输大盘,短中长期趋势均偏弱,茅台行业层面受拖累。",
+  "metrics": {
+    "latency_ms": 15000,
+    "data_sources_used": ["tushare"]
+  },
+  "module_specific": {
+    "classification": {
+      "primary_industry": {
+        "system": "申万二级",
+        "code": "801125.SI",
+        "name": "白酒Ⅱ"
+      },
+      "related_concepts": [
+        {"name": "转融券标的", "heat_rank": 1, "heat_score": 0.0},
+        {"name": "超级品牌", "heat_rank": 2, "heat_score": 0.0},
+        {"name": "贵州国资改革", "heat_rank": 3, "heat_score": 0.0}
+      ]
+    },
+    "agent_breakdown": {
+      "trend": {
+        "score": -45,
+        "confidence": 0.75,
+        "stage": "下行",
+        "key_signals": [
+          {"name": "1m_return", "value": -0.0479, "interpretation": "-1"},
+          {"name": "3m_return", "value": -0.0185, "interpretation": "-1"},
+          {"name": "6m_return", "value": -0.1209, "interpretation": "-2"},
+          {"name": "12m_return", "value": -0.1907, "interpretation": "-2"},
+          {"name": "rs_vs_csi300_1m", "value": -0.1282, "interpretation": "-2"},
+          {"name": "rs_vs_csi300_6m", "value": -0.1645, "interpretation": "-2"},
+          {"name": "rs_vs_csi300_12m", "value": -0.4648, "interpretation": "-3"},
+          {"name": "breadth_adr", "value": 0.1579, "interpretation": "-2"},
+          {"name": "limit_up_count", "value": 0, "interpretation": "-1"}
+        ]
+      },
+      "fundamentals": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
+      "capital_flow": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
+      "leaders": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
+      "macro_policy": {"score": 0, "confidence": 0.3, "note": "v2 will add"}
+    },
+    "industry_outlook": {
+      "stage": "下行",
+      "horizon": "60d",
+      "rationale": "多窗口(1M/3M/6M/12M)均负收益且持续跑输沪深300,行业内breadth极弱,趋势未见明显止跌信号"
+    },
+    "stock_in_industry": {
+      "relative_position": "无法判断(MVP阶段无龙头数据)",
+      "industry_boost": -1,
+      "rationale": "行业整体偏弱,对贵州茅台有拖累效应"
+    },
+    "weights_used": {
+      "trend": 1.0,
+      "_note": "MVP阶段只走trend维度"
+    }
+  }
+}
