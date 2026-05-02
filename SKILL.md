@@ -1,6 +1,6 @@
 ---
 name: industry-analysis
-description: 当总控需要分析 A 股股票所在行业的走势、龙头表现、行业景气度时调用。输入股票代码 + 上下文,输出符合 module_output_v1 的行业分析 JSON,包含 -100~100 的行业评分、对该股的行业层面影响判断(含目标股 vs 行业龙头的相对位置)、关键催化与风险。仅适用 A 股。当前激活:行业走势 agent + 龙头 agent;基本面/资金/宏观政策 agent 暂为 stub(待 Plan 2 补全)。
+description: 当总控需要分析 A 股股票所在行业的走势、基本面、资金流、龙头表现、宏观传导时调用。输入股票代码 + 上下文,输出符合 module_output_v1 的行业分析 JSON,包含 -100~100 的行业评分、对该股的行业层面影响判断(含目标股 vs 行业龙头的相对位置)、5 维度 agent 拆解、关键催化与风险。仅适用 A 股。所有 5 个分析 agent(走势/基本面/资金/龙头/宏观政策)全部激活。
 version: 1.0.0
 schema_version: module_output_v1
 inputs:
@@ -145,37 +145,170 @@ python scripts/leaders/compute_target_position.py \
 - 目标股落后 + 龙头都跌 → 显著负分(-40 ~ -60)
 - 目标股不在 Top 5 + RS 弱 → 负分
 
-### Step 4: 其他 3 个 agent(MVP 占位)
+### Step 2.6: 拉取基本面数据
 
-**注意:这 3 个都是"行业层面"agent,不是个股层面** —— 个股财务/资金/公告归 financial-analysis / capital-flow-analysis / event-announcement-analysis 子 skill 处理,我们不碰。
+```bash
+python scripts/fundamentals/fetch_industry_financials.py \
+  --industry-l2-code {l2_code} --analysis-date {analysis_date} \
+  --cache-dir ./data --output -
 
-| Stub agent | 我们做的(行业层面) | 不做(个股层面,归其他子 skill) |
-|---|---|---|
-| `fundamentals`(行业基本面) | 行业 PE 历史分位、行业聚合 ROE / 营收 / 毛利率趋势 | 个股财报、个股估值 |
-| `capital_flow`(行业资金) | 板块主力净流入、北向行业偏好、行业 ETF 申赎、融资融券行业聚合 | 个股资金流、个股龙虎榜 |
-| `macro_policy`(行业宏观&政策) | 宏观→行业传导(白酒看 CPI、银行看利率)、行业政策催化 | 整体宏观、个股公告 |
+python scripts/fundamentals/fetch_industry_valuation.py \
+  --industry-l2-code {l2_code} --analysis-date {analysis_date} \
+  --cache-dir ./data --output -
+```
 
-3 个 agent 暂未实现(Plan 2b 待跟其他子 skill 对齐边界后开工),先生成占位 stub:
+得到:
+- 行业聚合营收/利润 YoY 趋势(过去 8 季度)
+- 行业 ROE / 毛利率中位数趋势
+- 行业 PE/PB 当前值 + **过去 5 年历史分位**(关键!判断估值水位)
 
+### Step 2.7: 拉取资金流数据
+
+```bash
+python scripts/capital/fetch_main_flow.py \
+  --industry-name "{l2_name}" --analysis-date {analysis_date} \
+  --cache-dir ./data --output -
+
+python scripts/capital/fetch_northbound.py \
+  --industry-l2-code {l2_code} --analysis-date {analysis_date} \
+  --cache-dir ./data --output -
+
+python scripts/capital/fetch_margin.py \
+  --industry-l2-code {l2_code} --analysis-date {analysis_date} \
+  --cache-dir ./data --output -
+```
+
+得到:
+- 板块主力资金净流入(akshare,东方财富数据,今日/5d/10d)
+- 北向资金行业持仓变化(5d/10d)
+- 融资余额变化(5d/20d)
+
+> 注:akshare 受网络/代理影响时,返回字段全 None(graceful 降级),不阻塞主流程。
+
+### Step 2.8: 拉取宏观指标数据
+
+```bash
+python scripts/macro_policy/fetch_macro_indicators.py \
+  --analysis-date {analysis_date} --cache-dir ./data --output -
+```
+
+得到:CPI / PPI / PMI / M0/M1/M2 / SHIBOR(过去 12 个月月度数据 + 当日 SHIBOR 快照)。
+
+### Step 3.6: 行业基本面 agent 推理
+
+基于 Step 2.6 数据推理:
+
+- **景气度阶段**(底部 / 复苏 / 扩张 / 见顶):看营收/利润 YoY 趋势走向
+- **估值水位**:看 PE/PB 历史分位
+  - 分位 < 20%:极便宜 → 估值修复空间大,加分
+  - 分位 20-50%:合理偏低
+  - 分位 50-80%:合理偏贵
+  - 分位 > 80%:极贵 → 风险高,减分
+- **盈利质量**:ROE / 毛利率中位数趋势
+
+输出:
 ```json
 {
-  "fundamentals":  {"score": 0, "confidence": 0.3, "note": "v2 will add (行业聚合层面)"},
-  "capital_flow":  {"score": 0, "confidence": 0.3, "note": "v2 will add (行业聚合层面)"},
-  "macro_policy":  {"score": 0, "confidence": 0.3, "note": "v2 will add (行业聚合层面)"}
+  "score": -100,
+  "confidence": 0.0,
+  "stage": "底部|复苏|扩张|见顶",
+  "valuation_percentile": {"pe": 0.35, "pb": 0.42},
+  "key_signals": []
 }
 ```
 
-### Step 5: 综合(裁判逻辑简化版)
+判分原则:
+- 景气向上 + 估值低 → 高分(+50 ~ +80)
+- 景气见顶 + 估值高 → 低分(-50 ~ -80)
+- 矛盾信号 → 中性
 
-当前激活 trend + leaders 2 个 agent。简化裁判:
+### Step 3.7: 行业资金流 agent 推理
 
-- **score** = `0.5 × trend_score + 0.5 × leader_score`(权重均分)
-- **confidence** = `min(0.7 × max(trend_conf, leader_conf), 0.6)`
-  - 上限 0.6(2 个维度,比单维度可信,但还差 3 个 agent)
-- **industry_boost**:取 final_score / 50,四舍五入到 [-2, +2]
-- **stock_in_industry.relative_position**:直接来自 compute_target_position 的标签
+基于 Step 2.7 数据推理:
 
-如果 trend / leaders 数据都缺失 → status = failed;只有一个缺失 → status = partial,confidence ≤ 0.4。
+- **共识强度**:主力 + 北向 + 融资三者是否同向(都流入/都流出)
+- **趋势节奏**:5d vs 10d/20d,加速还是减速
+- **板块排名**:今日板块在所有板块中的资金流排名
+
+输出:
+```json
+{
+  "score": -100,
+  "confidence": 0.0,
+  "main_inflow_5d_yi": -25.4,
+  "northbound_change_5d_pct": -0.08,
+  "margin_change_5d_pct": -0.03,
+  "consensus": "all_outflow|mixed|all_inflow",
+  "key_signals": []
+}
+```
+
+判分原则:
+- 三向同流入 + 排名靠前 → 高分(+60 ~ +80)
+- 三向同流出 → 低分(-60 ~ -80)
+- 主力出 + 北向进(分歧) → 中性偏弱
+
+### Step 3.8: 行业宏观&政策 agent 推理
+
+基于 Step 2.8 宏观数据 + **目标行业的特性**做"宏观→行业传导"判断:
+
+| 行业 | 关键宏观因子 | 顺风条件 |
+|---|---|---|
+| 白酒 / 食品饮料 | CPI、可选消费、消费税政策 | CPI 温和上行 + 消费复苏 |
+| 银行 | 利率(SHIBOR)、社融、息差 | 利率上行 + 社融扩张 |
+| 地产 | 利率、社融、政策(限购) | 利率下行 + 政策放松 |
+| 出口 / 消费电子 | 汇率、美国 PMI | 人民币贬值 + 海外需求强 |
+| 周期(煤炭/有色) | PPI、PMI、原材料价格 | PPI 上行 + PMI > 50 |
+| TMT(半导体/计算机) | M2、风险偏好 | M2 增速高 + 政策利好 |
+
+输出:
+```json
+{
+  "score": -100,
+  "confidence": 0.0,
+  "macro_alignment": "顺风|中性|逆风",
+  "key_signals": [
+    {"name": "cpi_yoy", "value": 0.022, "interpretation": "..."},
+    {"name": "shibor_1y", "value": 0.025, "interpretation": "..."}
+  ]
+}
+```
+
+### Step 4: 其他 0 个 agent(全部激活)
+
+✅ 5 个 analyst agent 全部激活(trend / fundamentals / capital_flow / leaders / macro_policy)。无 stub。
+
+### Step 5: 综合裁判(5 维度,horizon-aware 权重)
+
+按 forecast_horizon 加权:
+
+| forecast_horizon | trend | fundamentals | capital_flow | leaders | macro_policy |
+|---|---|---|---|---|---|
+| 5d | 30% | 5% | 35% | 25% | 5% |
+| 20d | 25% | 10% | 25% | 25% | 15% |
+| 60d | 20% | 20% | 20% | 20% | 20% |
+| 120d | 15% | 30% | 15% | 20% | 20% |
+| 250d | 10% | 35% | 10% | 15% | 30% |
+
+**短期重技术/资金/龙头(动量主导),长期重基本面/宏观(基本面回归)**。
+
+裁判输出:
+
+- **final_score** = `Σ (weight_i × agent_i.score)`,四舍五入到整数
+- **final_confidence**(参考公式):
+  ```
+  ≈ 0.5 × avg(5 agent confidences)
+  + 0.3 × score_agreement_factor       # 5 个 score 标准差小 → 一致
+  + 0.2 × bull_bear_clarity_factor     # 信号一致性
+  - horizon_uncertainty_penalty        # 5d:0, 20d:0.05, 60d:0.10, 120d:0.15, 250d:0.20
+  ```
+  - 上限 0.85(5 维度全激活,但仍受 horizon 长度的天然不确定性影响)
+- **industry_boost** = `round(final_score / 50)`,clip 到 [-2, +2]
+- **stock_in_industry.relative_position**:来自 leaders agent 的 target_position
+- **industry_outlook.verdict**:综合 trend + fundamentals → 顺风 / 中性 / 逆风
+- **industry_outlook.stage**:综合 trend.stage 和 fundamentals.stage
+
+如果 ≤ 2 个 agent success → status = failed;3-4 个 success → status = partial,confidence ≤ 0.5。
 
 ### Step 6: 派生 signal + 组装最终 JSON
 
@@ -217,10 +350,17 @@ python scripts/output_validator.py --input /tmp/output.json
 |---|---|
 | 无法识别股票申万分类(ST/退市/新股) | `status=failed`,`code=DATA_NOT_FOUND`,`missing=["classification"]` |
 | 行业指数数据缺失 | `status=failed`,`code=DATA_NOT_FOUND` |
-| 走势数据不完整(< 60 个交易日) | `status=partial`,`confidence ≤ 0.4`,`reasons` 标注数据缺失 |
-| 龙头数据获取失败(daily_basic 当日返回空) | `status=partial`,leaders agent 输出 stub,只用 trend |
+| 走势数据不完整(< 60 个交易日) | `status=partial`,`confidence ≤ 0.4` |
+| 龙头数据获取失败(daily_basic 当日返回空) | `status=partial`,leaders agent 输出 stub |
 | 目标股不在行业成分股(刚转板/重命名) | rank=None,position="无法判断",continue with leaders |
+| 基本面数据 fina_indicator 报告期未发布 | fundamentals agent 用最近完成季度,confidence ↓ |
+| 资金流 akshare 网络失败(代理问题) | capital_flow agent 字段全 None,score=0,confidence=0,不算入加权 |
+| 北向 / 融资余额数据缺失 | capital_flow agent 用可用部分,confidence ↓ |
+| 宏观 PMI 接口无权限 | macro_policy agent 用其他指标(CPI/PPI/M2/SHIBOR),pmi 字段=null |
 | 输出 JSON 校验失败 | 修正后重试 1 次,仍失败设 `status=failed`,`code=REASONING_FAILED` |
+| ≤ 2 个 agent success | `status=failed` |
+| 3-4 个 agent success | `status=partial`,`confidence ≤ 0.5` |
+| 5 个 agent success | `status=success` |
 
 ## 6. Examples
 
@@ -237,7 +377,7 @@ python scripts/output_validator.py --input /tmp/output.json
 }
 ```
 
-输出(trend + leaders 双激活):
+输出(5 agent 全激活,horizon-aware 加权):
 
 ```json
 {
@@ -247,24 +387,26 @@ python scripts/output_validator.py --input /tmp/output.json
   "schema_version": "module_output_v1",
   "request_id": "req_20260501_abc123",
   "analysis_date": "2026-05-01",
-  "status": "partial",
+  "status": "success",
   "signal": "中性",
-  "score": -10,
-  "confidence": 0.5,
+  "score": -15,
+  "confidence": 0.7,
   "reasons": [
-    "白酒行业 12M -19%,显著跑输沪深 300,趋势下行",
-    "茅台是绝对龙头(市值 1.7 万亿,2 倍领先五粮液),龙头地位部分对冲行业弱势",
-    "Top 5 龙头 1M 平均跌 4.6%,茅台跌幅相近,无独立 alpha",
-    "行业基本面 / 资金 / 宏观维度待 v2 补全"
+    "白酒 12M -19% 显著跑输沪深 300,但 3M 跌速放缓",
+    "行业 PE 历史分位 35%,估值已具吸引力",
+    "茅台是绝对龙头(市值 1.7 万亿,领先五粮液 4.6 倍)",
+    "板块主力 5d 净流出 28 亿,北向减仓 8%,资金面共识偏空",
+    "CPI 温和上行 + M2 增速回暖,宏观对消费品长期有利"
   ],
   "risks": [
-    "行业跌幅可能继续扩大,龙头地位无法挽救趋势",
-    "MVP 缺资金面 / 政策催化信号"
+    "行业系统性下行未止,资金面共识偏空可能延续",
+    "短期消费税政策不确定性",
+    "估值见底信号未明,可能继续杀估值"
   ],
-  "summary": "白酒走势弱但茅台是绝对龙头,综合中性。",
+  "summary": "白酒估值已便宜 + 茅台绝对龙头 + 宏观长期友好,但短期资金共识偏空,综合中性。",
   "metrics": {
-    "latency_ms": 12000,
-    "data_sources_used": ["tushare"]
+    "latency_ms": 30000,
+    "data_sources_used": ["tushare", "akshare"]
   },
   "module_specific": {
     "classification": {
@@ -272,24 +414,45 @@ python scripts/output_validator.py --input /tmp/output.json
       "related_concepts": []
     },
     "agent_breakdown": {
-      "trend": {"score": -45, "confidence": 0.75, "stage": "下行", "key_signals": []},
-      "leaders": {
+      "trend": {"score": -55, "confidence": 0.75, "stage": "下行", "key_signals": []},
+      "fundamentals": {
         "score": 25, "confidence": 0.7,
-        "target_position": "绝对龙头",
-        "rank_in_industry": 1,
-        "rs_vs_leaders_avg_1m": 1.0,
+        "stage": "底部",
+        "valuation_percentile": {"pe": 0.35, "pb": 0.42},
         "key_signals": []
       },
-      "fundamentals": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
-      "capital_flow": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
-      "macro_policy": {"score": 0, "confidence": 0.3, "note": "v2 will add"}
+      "capital_flow": {
+        "score": -40, "confidence": 0.65,
+        "main_inflow_5d_yi": -28.4, "consensus": "all_outflow",
+        "key_signals": []
+      },
+      "leaders": {
+        "score": 10, "confidence": 0.65,
+        "target_position": "绝对龙头", "rank_in_industry": 1,
+        "rs_vs_leaders_avg_1m": 0.99, "key_signals": []
+      },
+      "macro_policy": {
+        "score": 30, "confidence": 0.6,
+        "macro_alignment": "顺风",
+        "key_signals": []
+      }
+    },
+    "industry_outlook": {
+      "verdict": "中性偏弱",
+      "stage": "下行",
+      "horizon": "60d",
+      "rationale": "走势资金面偏弱,但估值底部 + 宏观顺风给予支撑"
     },
     "stock_in_industry": {
       "relative_position": "绝对龙头",
       "industry_boost": 0,
-      "rationale": "行业弱(-45)与龙头地位强(+25)抵消,综合中性"
+      "rationale": "行业综合 -15 中性偏弱,龙头地位不足以扭转方向"
     },
-    "weights_used": {"trend": 0.5, "leaders": 0.5, "_note": "trend + leaders 均权"}
+    "weights_used": {
+      "trend": 0.20, "fundamentals": 0.20, "capital_flow": 0.20,
+      "leaders": 0.20, "macro_policy": 0.20,
+      "_note": "horizon=60d 按 5 维度等权"
+    }
   }
 }
 ```
