@@ -1,0 +1,106 @@
+{
+  "module_id": "industry_analysis",
+  "module_name": "行业分析模块",
+  "module_version": "1.0.0",
+  "schema_version": "module_output_v1",
+  "request_id": "req_20260430_live",
+  "analysis_date": "2026-04-30",
+  "status": "partial",
+  "signal": "中性",
+  "score": -23,
+  "confidence": 0.53,
+  "reasons": [
+    "白酒Ⅱ 12M -19.07%,沪深300同期+27.4%,RS=0.635严重跑输",
+    "行业内3涨16跌涨跌比0.19,涨停0家,板块极度偏空",
+    "贵州茅台是市值1.73万亿的绝对龙头,领先五粮液4.6倍",
+    "茅台3M +3.11%而龙头平均-6.45%,中期独强相对抗跌",
+    "基本面/资金/宏观政策3维度待Plan2b补全"
+  ],
+  "risks": [
+    "行业系统性下行未止,龙头地位无法完全对冲β风险",
+    "茅台1M -5.11%略弱于龙头均值-4.55%,短期动能微弱",
+    "白酒估值修复依赖宏观消费复苏,不确定性高",
+    "MVP仅2维度,综合判断置信度受限"
+  ],
+  "summary": "白酒下行但茅台绝对龙头,综合中性偏弱。",
+  "metrics": {
+    "latency_ms": 18000,
+    "data_sources_used": ["tushare"]
+  },
+  "module_specific": {
+    "classification": {
+      "primary_industry": {
+        "system": "申万二级",
+        "code": "801125.SI",
+        "name": "白酒Ⅱ"
+      },
+      "l1_industry": {
+        "code": "801120.SI",
+        "name": "食品饮料"
+      },
+      "related_concepts": [
+        {"name": "转融券标的", "code": "TS108", "heat_rank": 1},
+        {"name": "超级品牌", "code": "TS118", "heat_rank": 2},
+        {"name": "贵州国资改革", "code": "TS125", "heat_rank": 3}
+      ]
+    },
+    "agent_breakdown": {
+      "trend": {
+        "score": -55,
+        "confidence": 0.75,
+        "stage": "下行",
+        "key_signals": [
+          {"name": "industry_return_1m", "value": -0.0479, "interpretation": "1M -4.79%, -1"},
+          {"name": "industry_return_3m", "value": -0.0185, "interpretation": "3M -1.85%, 跌速放缓, -1"},
+          {"name": "industry_return_6m", "value": -0.1209, "interpretation": "6M -12.09%, -2"},
+          {"name": "industry_return_12m", "value": -0.1907, "interpretation": "12M -19.07%, -2"},
+          {"name": "rs_vs_csi300_12m", "value": 0.6351, "interpretation": "RS=0.635 严重跑输, -3"},
+          {"name": "advance_decline_ratio", "value": 0.1875, "interpretation": "3涨16跌, 极度偏空, -2"},
+          {"name": "limit_up_count", "value": 0, "interpretation": "无涨停, -1"}
+        ]
+      },
+      "leaders": {
+        "score": 10,
+        "confidence": 0.65,
+        "target_position": "绝对龙头",
+        "rank_in_industry": 1,
+        "rs_vs_leaders_avg_1m": 0.9941,
+        "rs_vs_leaders_avg_3m": 1.1021,
+        "leaders_avg_1m": -0.0455,
+        "leaders_avg_3m": -0.0645,
+        "key_signals": [
+          {"name": "rank_in_industry", "value": 1, "interpretation": "绝对龙头, +2"},
+          {"name": "mv_ratio_vs_no2", "value": 4.6, "interpretation": "市值领先4.6倍, +1"},
+          {"name": "leaders_avg_1m", "value": -0.0455, "interpretation": "龙头集体跌-4.55%, -2"},
+          {"name": "rs_vs_leaders_3m", "value": 1.1021, "interpretation": "3M强于龙头均值, +1"}
+        ],
+        "top5_leaders": [
+          {"ticker": "600519.SH", "name": "贵州茅台", "total_mv_yi": 17341, "return_1m": -0.0511, "return_3m": 0.0311, "pe_ttm": 21.0},
+          {"ticker": "000858.SZ", "name": "五粮液", "total_mv_yi": 3768, "return_1m": -0.0700, "return_3m": -0.0390, "pe_ttm": 13.3},
+          {"ticker": "600809.SH", "name": "山西汾酒", "total_mv_yi": 1749, "return_1m": -0.0071, "return_3m": -0.1111, "pe_ttm": 15.9},
+          {"ticker": "000568.SZ", "name": "泸州老窖", "total_mv_yi": 1473, "return_1m": -0.0580, "return_3m": -0.1091, "pe_ttm": 14.8},
+          {"ticker": "002304.SZ", "name": "洋河股份", "total_mv_yi": 742, "return_1m": -0.0413, "return_3m": -0.0942, "pe_ttm": 73.0}
+        ]
+      },
+      "fundamentals": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
+      "capital_flow": {"score": 0, "confidence": 0.3, "note": "v2 will add"},
+      "macro_policy": {"score": 0, "confidence": 0.3, "note": "v2 will add"}
+    },
+    "industry_outlook": {
+      "verdict": "逆风",
+      "stage": "下行",
+      "horizon": "60d",
+      "rationale": "白酒行业所有时间窗口均负收益,RS对沪深300严重跑输,breadth极弱,趋势未见止跌信号"
+    },
+    "stock_in_industry": {
+      "relative_position": "绝对龙头",
+      "industry_boost": 0,
+      "rationale": "行业趋势-55与龙头地位+10部分对冲,综合-23判定中性偏弱;茅台3M跑赢龙头均值显示中期相对抗跌,但行业系统性下行不容忽视"
+    },
+    "weights_used": {
+      "trend": 0.5,
+      "leaders": 0.5,
+      "_note": "trend + leaders 双维度等权;3 个 stub agent 不参与加权"
+    }
+  }
+}

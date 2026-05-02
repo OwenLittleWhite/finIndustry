@@ -8,7 +8,8 @@ owner: 行业分析负责人
 description: 分析目标股票所在行业的走势、龙头表现、行业景气度,给出行业层面对该股的影响判断
 
 inputs:
-  required: [request_id, schema_version, ticker, analysis_date]
+  required: [ticker, analysis_date]              # 业务必填
+  system_filled: [request_id, schema_version]    # 总控自动填(uuid / 默认 schema)
   optional: [stock_name, market, forecast_horizon, current_price]
 
 outputs:

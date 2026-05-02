@@ -11,3 +11,6 @@ build/
 data/
 .env
 .DS_Store
+
+# 用户文档 / 工作目录持有的非项目文件
+整体架构-v1.md
