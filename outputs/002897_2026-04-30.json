@@ -1,0 +1,145 @@
+{
+  "module_id": "industry_analysis",
+  "module_name": "行业分析模块",
+  "module_version": "1.0.0",
+  "schema_version": "module_output_v1",
+  "request_id": "req_20260430_002897",
+  "analysis_date": "2026-04-30",
+  "status": "success",
+  "signal": "中性",
+  "score": -10,
+  "confidence": 0.72,
+  "reasons": [
+    "通信设备 12M +268% 超级大牛(AI 算力主线),但 PE 历史 99.4% / PB 94.7% 极贵",
+    "行业基本面持续改善:营收 YoY 从 -1% 改善到 +17%,净利稳定 +13%",
+    "资金面极度撤离:主力 5d -207 亿,融资余额 5d -75% / 20d -70%,机构大幅逃顶",
+    "意华股份严重落后龙头:1M -6% vs 龙头平均 +15%,RS_3m=0.65 跑输 35%",
+    "宏观顺风(PPI 转正 / PMI 扩张 / M2+8.5%)对通信设备资本品总体有利"
+  ],
+  "risks": [
+    "行业见顶风险高,大牛已透支,资金集体撤离往往是回调起点",
+    "002897 在大牛行业里没跟上,行业回调它可能跌得更深(掉队股的负 alpha)",
+    "中际旭创 1M+42% / 长飞光纤 3M+180% 龙头狂涨,可能存在板块短期透支风险"
+  ],
+  "summary": "通信设备见顶警示+意华掉队,行业层面对该股是负向。",
+  "metrics": {
+    "latency_ms": 38000,
+    "data_sources_used": ["tushare"]
+  },
+  "module_specific": {
+    "classification": {
+      "primary_industry": {
+        "system": "申万二级",
+        "code": "801102.SI",
+        "name": "通信设备"
+      },
+      "l1_industry": {
+        "code": "801770.SI",
+        "name": "通信"
+      },
+      "related_concepts": [
+        {"name": "电子烟", "code": "TS282", "heat_rank": 1},
+        {"name": "年报预增", "code": "TS537", "heat_rank": 2},
+        {"name": "富士康概念", "code": "TS558", "heat_rank": 3},
+        {"name": "华为概念", "code": "TS668", "heat_rank": 4},
+        {"name": "光伏概念", "code": "TS732", "heat_rank": 5}
+      ]
+    },
+    "agent_breakdown": {
+      "trend": {
+        "score": 60,
+        "confidence": 0.80,
+        "stage": "见顶震荡",
+        "key_signals": [
+          {"name": "industry_return_12m", "value": 2.6869, "interpretation": "12M +268.69% 超级大牛, +3"},
+          {"name": "industry_return_6m", "value": 0.6012, "interpretation": "6M +60.12%, +3"},
+          {"name": "industry_return_3m", "value": 0.3122, "interpretation": "3M +31.22%, +2"},
+          {"name": "industry_return_1m", "value": 0.2147, "interpretation": "1M +21.47%, +2"},
+          {"name": "rs_vs_csi300_12m", "value": 2.95, "interpretation": "RS=2.95,远超大盘, +3"},
+          {"name": "advance_decline_ratio", "value": 0.96, "interpretation": "48涨50跌,行业内分化, -1"},
+          {"name": "limit_up_count", "value": 3, "interpretation": "当日3只涨停,余热在, +1"}
+        ]
+      },
+      "fundamentals": {
+        "score": -15,
+        "confidence": 0.75,
+        "stage": "扩张",
+        "valuation_percentile": {"pe": 0.994, "pb": 0.947},
+        "key_signals": [
+          {"name": "agg_revenue_yoy_2026q1", "value": 0.1673, "interpretation": "营收+16.73% 加速增长, +2"},
+          {"name": "agg_profit_yoy_2026q1", "value": 0.1129, "interpretation": "净利+11.29% 稳定增长, +1"},
+          {"name": "revenue_yoy_trajectory", "value": "-1%→+17%", "interpretation": "5 季度持续改善, +2"},
+          {"name": "pe_percentile_5y", "value": 0.994, "interpretation": "PE 历史 99.4% 分位极贵, -3"},
+          {"name": "pb_percentile_5y", "value": 0.947, "interpretation": "PB 历史 94.7% 分位极贵, -3"},
+          {"name": "current_pe_median", "value": 106.6, "interpretation": "行业中位 PE 106,绝对值偏高, -1"}
+        ]
+      },
+      "capital_flow": {
+        "score": -70,
+        "confidence": 0.80,
+        "main_inflow_today_yi": -38.0,
+        "main_inflow_5d_yi": -206.6,
+        "main_inflow_10d_yi": -138.4,
+        "north_money_today_yi": 35.07,
+        "margin_balance_yi": 307.3,
+        "margin_change_5d": -0.7482,
+        "margin_change_20d": -0.7036,
+        "consensus": "extreme_outflow",
+        "key_signals": [
+          {"name": "main_inflow_5d_yi", "value": -206.6, "interpretation": "主力 5d 净流出 206 亿,极强空头, -4"},
+          {"name": "main_inflow_today_yi", "value": -38.0, "interpretation": "主力当日净流出 38 亿, -3"},
+          {"name": "margin_change_5d", "value": -0.7482, "interpretation": "融资 5d -75%,惊人去杠杆, -4"},
+          {"name": "margin_change_20d", "value": -0.7036, "interpretation": "融资 20d -70%,趋势性大撤离, -4"},
+          {"name": "north_money_today_yi", "value": 35.07, "interpretation": "市场级别北向 +35 亿, +1"}
+        ]
+      },
+      "leaders": {
+        "score": -35,
+        "confidence": 0.78,
+        "target_position": "落后",
+        "rank_in_industry": null,
+        "rs_vs_leaders_avg_1m": 0.816,
+        "rs_vs_leaders_avg_3m": 0.655,
+        "leaders_avg_1m": 0.150,
+        "leaders_avg_3m": 0.576,
+        "key_signals": [
+          {"name": "target_position", "value": "落后", "interpretation": "002897 不在 Top 5,远小于龙头(111亿 vs 9549亿), -2"},
+          {"name": "rs_vs_leaders_3m", "value": 0.655, "interpretation": "3M 严重跑输龙头(+3% vs +58%), -3"},
+          {"name": "rs_vs_leaders_1m", "value": 0.816, "interpretation": "1M 跑输龙头 -6% vs +15%, -2"},
+          {"name": "target_pe_relative", "value": "37.88 vs 行业 106", "interpretation": "估值远低于行业中位,有补涨空间, +1"},
+          {"name": "leader_strength", "value": "中际旭创 9549亿 1M+42%", "interpretation": "龙头狂涨可能透支, -1(对意华间接利空)"}
+        ]
+      },
+      "macro_policy": {
+        "score": 30,
+        "confidence": 0.65,
+        "macro_alignment": "顺风",
+        "key_signals": [
+          {"name": "ppi_2026_03", "value": 0.005, "interpretation": "PPI YoY +0.5% 转正,工业品价格回升, +2"},
+          {"name": "manufacturing_pmi", "value": 50.4, "interpretation": "PMI 进扩张区,设备需求复苏, +2"},
+          {"name": "m2_yoy", "value": 0.085, "interpretation": "M2 +8.5% 流动性温和宽松, +1"},
+          {"name": "shibor_1y", "value": 1.47, "interpretation": "极低利率,资本品投资成本低, +2"}
+        ]
+      }
+    },
+    "industry_outlook": {
+      "verdict": "中性偏弱",
+      "stage": "见顶震荡",
+      "horizon": "60d",
+      "rationale": "通信设备/AI 算力 12M +268% 是 2025-2026 主线行情,但估值已透支(PE 99.4% 分位)+ 资金大幅撤离(主力 5d -207 亿,融资 -75%)+ 行业内分化(48涨50跌),见顶风险显著高于一般水平。宏观流动性 + 基本面持续改善是支撑因子。"
+    },
+    "stock_in_industry": {
+      "relative_position": "落后",
+      "industry_boost": -1,
+      "rationale": "意华股份在大牛行业里严重掉队(3M RS=0.65 跑输 35%),没有吃到行业 β。行业一旦回调,落后股可能因高弹性反向跌得更深;但其 PE 37.88 远低于龙头 60-250,估值缓冲一定程度限制下行。综合行业层面对该股略拖累(boost=-1)。"
+    },
+    "weights_used": {
+      "trend": 0.20,
+      "fundamentals": 0.20,
+      "capital_flow": 0.20,
+      "leaders": 0.20,
+      "macro_policy": 0.20,
+      "_note": "horizon=60d 5 维度等权"
+    }
+  }
+}
