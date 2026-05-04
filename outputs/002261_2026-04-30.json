@@ -1,0 +1,146 @@
+{
+  "module_id": "industry_analysis",
+  "module_name": "行业分析模块",
+  "module_version": "1.0.0",
+  "schema_version": "module_output_v1",
+  "request_id": "req_20260430_002261",
+  "analysis_date": "2026-04-30",
+  "status": "success",
+  "signal": "中性",
+  "score": -7,
+  "confidence": 0.70,
+  "reasons": [
+    "软件开发行业 12M +8% 但 6M -14%/3M -18% 高位深度回调中,1M +1.4% 止跌",
+    "行业基本面弱:营收 YoY -2%→+1.4% 刚转正,ROE 中位 -1 行业普遍微利",
+    "估值:PE 历史 92.6% 分位极贵(行业中位 122 倍),PB 64.3% 中性",
+    "002261 抗跌突出:3M +6.94% vs 龙头平均 -22%(RS=1.37),边缘计算题材驱动",
+    "但拓维 PE 746 倍(几乎亏损),涨幅靠催化,缺乏基本面支撑"
+  ],
+  "risks": [
+    "行业杀估值未结束,龙头同花顺 3M -33%/金山办公 -29% 仍在下跌",
+    "002261 PE 746 倍是题材股估值,一旦市场情绪退潮回撤弹性大",
+    "主力 5d -66 亿 + 融资 -65% 大幅去杠杆,机构态度并未转积极",
+    "ROE 中位数 -1 显示行业整体仍在挤水分阶段"
+  ],
+  "summary": "软件深度调整中,拓维抗跌但 PE 746 题材风险高。",
+  "metrics": {
+    "latency_ms": 38000,
+    "data_sources_used": ["tushare"]
+  },
+  "module_specific": {
+    "classification": {
+      "primary_industry": {
+        "system": "申万二级",
+        "code": "801104.SI",
+        "name": "软件开发"
+      },
+      "l1_industry": {
+        "code": "801750.SI",
+        "name": "计算机"
+      },
+      "related_concepts": [
+        {"name": "边缘计算", "code": "TS106", "heat_rank": 1},
+        {"name": "转融券标的", "code": "TS108", "heat_rank": 2},
+        {"name": "融资融券", "code": "TS143", "heat_rank": 3},
+        {"name": "融资标的股", "code": "TS145", "heat_rank": 4},
+        {"name": "融券标的股", "code": "TS147", "heat_rank": 5}
+      ]
+    },
+    "agent_breakdown": {
+      "trend": {
+        "score": -10,
+        "confidence": 0.70,
+        "stage": "深度调整,刚有底部反弹迹象",
+        "key_signals": [
+          {"name": "industry_return_12m", "value": 0.0812, "interpretation": "12M +8.12% 整体收益正, +1"},
+          {"name": "industry_return_6m", "value": -0.1442, "interpretation": "6M -14.42% 调整中, -2"},
+          {"name": "industry_return_3m", "value": -0.1798, "interpretation": "3M -17.98% 加速下杀, -2"},
+          {"name": "industry_return_1m", "value": 0.0136, "interpretation": "1M +1.36% 刚止跌, +1"},
+          {"name": "advance_decline_ratio", "value": 1.84, "interpretation": "当日 90涨49跌 显著活跃, +2"},
+          {"name": "limit_up_count", "value": 0, "interpretation": "无涨停,缺龙头, -1"}
+        ]
+      },
+      "fundamentals": {
+        "score": -25,
+        "confidence": 0.75,
+        "stage": "底部摸索",
+        "valuation_percentile": {"pe": 0.926, "pb": 0.643},
+        "key_signals": [
+          {"name": "agg_revenue_yoy_2026q1", "value": 0.0144, "interpretation": "营收+1.44% 刚转正, +1"},
+          {"name": "revenue_yoy_trajectory", "value": "-2%→+1.4%", "interpretation": "5 季度由负转正, +1"},
+          {"name": "median_roe_2026q1", "value": -0.9, "interpretation": "ROE 中位 -0.9% 行业普遍微利, -2"},
+          {"name": "pe_percentile_5y", "value": 0.926, "interpretation": "PE 92.6% 分位极贵, -3"},
+          {"name": "current_pe_median", "value": 122.5, "interpretation": "行业 PE 中位 122 倍偏高, -1"},
+          {"name": "pb_percentile_5y", "value": 0.643, "interpretation": "PB 64% 分位中性, 0"}
+        ]
+      },
+      "capital_flow": {
+        "score": -50,
+        "confidence": 0.72,
+        "main_inflow_today_yi": -9.4,
+        "main_inflow_5d_yi": -65.7,
+        "main_inflow_10d_yi": -164.1,
+        "north_money_today_yi": 35.07,
+        "margin_balance_yi": 259.3,
+        "margin_change_5d": -0.6542,
+        "margin_change_20d": -0.6532,
+        "consensus": "outflow",
+        "key_signals": [
+          {"name": "main_inflow_5d_yi", "value": -65.7, "interpretation": "主力 5d 净流出 66 亿, -3"},
+          {"name": "main_inflow_10d_yi", "value": -164.1, "interpretation": "主力 10d 累计流出 164 亿, -3"},
+          {"name": "main_inflow_today_yi", "value": -9.4, "interpretation": "今日轻微流出 9 亿,边际放缓, -1"},
+          {"name": "margin_change_5d", "value": -0.6542, "interpretation": "融资 5d -65% 大幅去杠杆, -3"},
+          {"name": "margin_change_20d", "value": -0.6532, "interpretation": "融资 20d -65% 持续撤离, -3"},
+          {"name": "north_money_today_yi", "value": 35.07, "interpretation": "市场级别北向 +35 亿, +1"}
+        ]
+      },
+      "leaders": {
+        "score": 25,
+        "confidence": 0.75,
+        "target_position": "跟随",
+        "rank_in_industry": null,
+        "rs_vs_leaders_avg_1m": 1.044,
+        "rs_vs_leaders_avg_3m": 1.366,
+        "leaders_avg_1m": -0.0368,
+        "leaders_avg_3m": -0.2174,
+        "key_signals": [
+          {"name": "rs_vs_leaders_3m", "value": 1.366, "interpretation": "002261 3M+6.94% vs 龙头-21.74%,RS=1.37 显著抗跌, +3"},
+          {"name": "rs_vs_leaders_1m", "value": 1.044, "interpretation": "1M 也跑赢, +1"},
+          {"name": "leaders_avg_3m", "value": -0.2174, "interpretation": "龙头 3M 平均跌 22%,行业内龙头杀跌严重, -2"},
+          {"name": "target_pe_warning", "value": 746.1, "interpretation": "002261 PE 746 倍接近亏损,题材股估值, -3"},
+          {"name": "concept_edge_computing", "value": "边缘计算", "interpretation": "AI 边缘算力题材,有催化预期, +2"}
+        ]
+      },
+      "macro_policy": {
+        "score": 25,
+        "confidence": 0.65,
+        "macro_alignment": "顺风",
+        "key_signals": [
+          {"name": "ppi_2026_03", "value": 0.005, "interpretation": "PPI 转正,工业品价格回升, +1"},
+          {"name": "manufacturing_pmi", "value": 50.4, "interpretation": "PMI 进扩张区, +1"},
+          {"name": "m2_yoy", "value": 0.085, "interpretation": "M2 +8.5% 流动性宽松,利好成长股, +2"},
+          {"name": "shibor_1y", "value": 1.47, "interpretation": "极低利率,科技板块估值受益, +2"}
+        ]
+      }
+    },
+    "industry_outlook": {
+      "verdict": "中性偏弱",
+      "stage": "深度调整后底部摸索",
+      "horizon": "60d",
+      "rationale": "软件开发 6M/3M 持续下行,龙头同花顺 3M -33% / 金山 -29% 杀跌严重;但 1M 出现止跌信号(行业 +1.4%,当日 ADR=1.84 活跃),营收 YoY 也刚转正。估值 PE 92% 分位仍贵,主力/融资仍在撤离,反转尚未确认。"
+    },
+    "stock_in_industry": {
+      "relative_position": "跟随",
+      "industry_boost": 0,
+      "rationale": "002261 在调整行业里逆势抗跌(3M +6.94% vs 龙头 -21.74%),RS_3m=1.37 显著领先,边缘计算题材驱动有催化属性;但 PE 746 倍(亏损边缘)是题材股估值,一旦情绪退潮回撤幅度可能大于行业平均。行业层面正向(逆势强势)和负向(估值警示)对冲,综合 boost=0。"
+    },
+    "weights_used": {
+      "trend": 0.20,
+      "fundamentals": 0.20,
+      "capital_flow": 0.20,
+      "leaders": 0.20,
+      "macro_policy": 0.20,
+      "_note": "horizon=60d 5 维度等权"
+    }
+  }
+}
